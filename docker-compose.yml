@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: food-traceability-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: food_traceability
+      MYSQL_USER: fooduser
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - food-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend Spring Boot
+  backend:
+    build: ./backend
+    container_name: food-traceability-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/food_traceability
+      SPRING_DATASOURCE_USERNAME: fooduser
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: YourSuperSecretKeyForJWTTokenGenerationMustBeLongEnough32Chars
+      BLOCKCHAIN_NETWORK_URL: http://ganache:8545
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - food-network
+    restart: unless-stopped
+
+  # Frontend React (Production Build)
+  frontend:
+    build: ./frontend
+    container_name: food-traceability-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - food-network
+    restart: unless-stopped
+
+  # Ganache (Local Ethereum Blockchain)
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: food-traceability-ganache
+    ports:
+      - "8545:8545"
+    command: >
+      --wallet.mnemonic "your twelve word mnemonic phrase here for development only"
+      --server.host 0.0.0.0
+      --chain.chainId 1337
+    networks:
+      - food-network
+
+volumes:
+  mysql_data:
+
+networks:
+  food-network:
+    driver: bridge
