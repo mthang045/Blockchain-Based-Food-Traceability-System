@@ -1,68 +1,105 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { storageService } from '../services/storage';
+import { authAPI } from '../services/apiService';
 
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load current user from storage on mount
-    const currentUser = storageService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
+    // Load user from localStorage and verify token
+    const loadUser = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+
+      if (token && savedUser) {
+        try {
+          // Verify token is still valid by fetching profile
+          const response = await authAPI.getProfile();
+          if (response.success) {
+            setUser(response.data);
+            localStorage.setItem('user', JSON.stringify(response.data));
+          }
+        } catch (error) {
+          // Token invalid, clear storage
+          console.error('Token validation failed:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+      setLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   const login = async (email, password) => {
-    // Simple mock authentication - in production, use proper authentication
-    const foundUser = storageService.getUserByEmail(email);
-
-    if (foundUser) {
-      setUser(foundUser);
-      storageService.setCurrentUser(foundUser);
-      return true;
+    try {
+      const response = await authAPI.login({ email, password });
+      
+      if (response.success) {
+        const { user, token } = response.data;
+        
+        // Save to localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        setUser(user);
+        return { success: true, user };
+      }
+      
+      return { success: false, message: response.message || 'Login failed' };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Login failed. Please check your credentials.' 
+      };
     }
-
-    return false;
   };
 
   const register = async (userData) => {
-    const existingUser = storageService.getUserByEmail(userData.email);
-
-    if (existingUser) {
-      return false; // Email already exists
+    try {
+      const response = await authAPI.register(userData);
+      
+      if (response.success) {
+        const { user, token } = response.data;
+        
+        // Save to localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        setUser(user);
+        return { success: true, user };
+      }
+      
+      return { success: false, message: response.message || 'Registration failed' };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Registration failed. Please try again.' 
+      };
     }
-
-    const newUser = {
-      ...userData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-
-    storageService.addUser(newUser);
-    setUser(newUser);
-    storageService.setCurrentUser(newUser);
-
-    return true;
   };
 
   const logout = () => {
     setUser(null);
-    storageService.setCurrentUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
-  const updateProfile = (updates) => {
+  const updateProfile = async (updates) => {
     if (user) {
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
-      storageService.updateUser(user.id, updates);
-      storageService.setCurrentUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

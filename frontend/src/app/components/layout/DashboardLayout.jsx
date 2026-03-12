@@ -28,37 +28,35 @@ export default function DashboardLayout({ children }) {
   const getMenuItems = () => {
     const common = [
       { path: '/dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
+      { path: '/scan', icon: Scan, label: 'Quét QR Code' },
     ];
 
     switch (user?.role) {
-      case 'admin':
+      case 'ADMIN':
         return [
           ...common,
           { path: '/users', icon: Users, label: 'Quản lý người dùng' },
           { path: '/products', icon: Package, label: 'Quản lý sản phẩm' },
           { path: '/blockchain', icon: Store, label: 'Blockchain Logs' },
         ];
-      case 'producer':
+      case 'MANUFACTURER':
         return [
           ...common,
           { path: '/my-products', icon: Package, label: 'Sản phẩm của tôi' },
           { path: '/create-product', icon: Package, label: 'Tạo sản phẩm mới' },
         ];
-      case 'transporter':
+      case 'TRANSPORTER':
         return [
           ...common,
           { path: '/transport', icon: Truck, label: 'Vận chuyển' },
         ];
-      case 'store':
+      case 'STORE':
         return [
           ...common,
           { path: '/store-products', icon: Store, label: 'Sản phẩm' },
         ];
-      case 'consumer':
-        return [
-          ...common,
-          { path: '/scan', icon: Scan, label: 'Quét QR Code' },
-        ];
+      case 'CONSUMER':
+        return common;
       default:
         return common;
     }
@@ -167,11 +165,11 @@ export default function DashboardLayout({ children }) {
             </button>
             <div className="flex items-center gap-3">
               <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                {user?.role === 'admin' && 'Quản trị viên'}
-                {user?.role === 'producer' && 'Nhà sản xuất'}
-                {user?.role === 'transporter' && 'Nhà vận chuyển'}
-                {user?.role === 'store' && 'Cửa hàng'}
-                {user?.role === 'consumer' && 'Người tiêu dùng'}
+                {user?.role === 'ADMIN' && 'Quản trị viên'}
+                {user?.role === 'MANUFACTURER' && 'Nhà sản xuất'}
+                {user?.role === 'TRANSPORTER' && 'Nhà vận chuyển'}
+                {user?.role === 'STORE' && 'Cửa hàng'}
+                {user?.role === 'CONSUMER' && 'Người tiêu dùng'}
               </div>
             </div>
           </div>

@@ -1,0 +1,57 @@
+[
+  {
+    "username": "admin",
+    "email": "admin@foodtrace.vn",
+    "password": "$2a$10$X9qKvZ9xQ9KqZqKqZqKqZe.yRqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+    "role": "ADMIN",
+    "walletAddress": "0x1234567890123456789012345678901234567890",
+    "company": "Food Traceability HQ",
+    "isActive": true,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "username": "dalat_farm",
+    "email": "producer@dalatfarm.vn",
+    "password": "$2a$10$X9qKvZ9xQ9KqZqKqZqKqZe.yRqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+    "role": "MANUFACTURER",
+    "walletAddress": "0x7fD311e28443fdF8A2027E81713Be04386081DAc",
+    "company": "Dalat Fresh Farm",
+    "isActive": true,
+    "createdAt": "2026-01-15T00:00:00.000Z",
+    "updatedAt": "2026-01-15T00:00:00.000Z"
+  },
+  {
+    "username": "hcm_logistics",
+    "email": "transport@hcmlogistics.vn",
+    "password": "$2a$10$X9qKvZ9xQ9KqZqKqZqKqZe.yRqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+    "role": "TRANSPORTER",
+    "walletAddress": "0x2345678901234567890123456789012345678901",
+    "company": "HCM Fast Logistics",
+    "isActive": true,
+    "createdAt": "2026-02-01T00:00:00.000Z",
+    "updatedAt": "2026-02-01T00:00:00.000Z"
+  },
+  {
+    "username": "coopmart_store",
+    "email": "store@coopmart.vn",
+    "password": "$2a$10$X9qKvZ9xQ9KqZqKqZqKqZe.yRqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+    "role": "STORE",
+    "walletAddress": "0x3456789012345678901234567890123456789012",
+    "company": "Co.op Mart",
+    "isActive": true,
+    "createdAt": "2026-02-10T00:00:00.000Z",
+    "updatedAt": "2026-02-10T00:00:00.000Z"
+  },
+  {
+    "username": "consumer01",
+    "email": "consumer@example.vn",
+    "password": "$2a$10$X9qKvZ9xQ9KqZqKqZqKqZe.yRqKqKqKqKqKqKqKqKqKqKqKqKqKq",
+    "role": "CONSUMER",
+    "walletAddress": null,
+    "company": null,
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00.000Z",
+    "updatedAt": "2026-03-01T00:00:00.000Z"
+  }
+]

@@ -14,128 +14,175 @@ Dự án xây dựng hệ thống truy xuất nguồn gốc thực phẩm sử d
 ## ✨ Tính Năng Chính
 
 ### 🔐 Xác Thực & Phân Quyền
-- Đăng nhập/Đăng ký với hệ thống phân quyền
-- Quản lý profile người dùng
-- Phân quyền theo vai trò (Admin, Producer, Distributor, Consumer)
+- ✅ Đăng nhập/Đăng ký với JWT authentication
+- ✅ Quản lý profile người dùng với wallet address
+- ✅ Phân quyền theo vai trò: ADMIN, MANUFACTURER, TRANSPORTER, STORE, CONSUMER
+- ✅ Bảo mật với bcrypt password hashing
 
 ### 📦 Quản Lý Sản Phẩm
-- **Tạo sản phẩm mới**: Nhập thông tin chi tiết về sản phẩm
-- **Quản lý sản phẩm**: Xem, sửa, xóa sản phẩm của mình
-- **Kho sản phẩm**: Quản lý tồn kho và trạng thái sản phẩm
-- **Quản lý người dùng**: (Admin) Quản lý tài khoản trong hệ thống
+- ✅ **Tạo sản phẩm mới**: Nhập thông tin chi tiết (tên, xuất xứ, hạn sử dụng, ghi chú)
+- ✅ **Quản lý sản phẩm**: Xem, sửa, xóa sản phẩm (Admin & Manufacturer)
+- ✅ **Trạng thái sản phẩm**: Produced, InTransit, Delivered
+- ✅ **Quản lý người dùng**: (Admin) CRUD operations cho user accounts
+- ✅ **QR Code tự động**: Mỗi sản phẩm có QR code unique
 
 ### 🚚 Chuỗi Cung Ứng
-- **Theo dõi vận chuyển**: Cập nhật trạng thái vận chuyển theo thời gian thực
-- **Lịch sử blockchain**: Xem toàn bộ giao dịch trên blockchain
-- **Quản lý quy trình**: Theo dõi từng bước trong chuỗi cung ứng
+- ✅ **Theo dõi vận chuyển**: Cập nhật trạng thái theo thời gian thực
+- ✅ **Lịch sử blockchain**: Xem toàn bộ transaction history với blockchain hash
+- ✅ **Quản lý quy trình**: Theo dõi từng bước trong supply chain
+- ✅ **Smart Contract Integration**: Ghi nhận mọi thay đổi lên Ethereum blockchain
 
-### 📱 Truy Xuất Nguồn Gốc
-- **Quét mã QR**: Quét QR code để xem thông tin sản phẩm
-- **Xác minh blockchain**: Kiểm tra tính hợp lệ của dữ liệu trên blockchain
-- **Lịch sử sản phẩm**: Xem toàn bộ hành trình của sản phẩm
+### 📱 Truy Xuất Nguồn Gốc & QR Code
+- ✅ **Quét QR bằng camera**: Sử dụng camera sau để quét mã QR (html5-qrcode)
+- ✅ **Nhập mã thủ công**: Chế độ nhập QR code bằng bàn phím
+- ✅ **Tải xuống QR Code**: Download QR code dưới dạng PNG (400x400px)
+- ✅ **In nhãn dán QR**: In QR code với template chuyên nghiệp
+- ✅ **Xác minh blockchain**: Kiểm tra transaction hash và block number
+- ✅ **Lịch sử đầy đủ**: Timeline chi tiết từ sản xuất đến người tiêu dùng
 
 ### 📊 Dashboard & Báo Cáo
-- Tổng quan thống kê hệ thống
-- Biểu đồ phân tích dữ liệu
-- Báo cáo hoạt động
+- ✅ Tổng quan thống kê: Tổng sản phẩm, người dùng, giao dịch
+- ✅ Biểu đồ phân tích: Product status distribution
+- ✅ Recent activities và blockchain logs
+- ✅ Role-based dashboard views
 
 ## 🛠️ Công Nghệ Sử Dụng
 
-### Backend (Java)
-- **Java 17+** - Ngôn ngữ lập trình chính
-- **Spring Boot 3.x** - Framework backend
-- **Spring Security** - Xác thực và phân quyền
-- **Spring Data JPA** - ORM và database access
-- **Hibernate** - JPA implementation
-- **MySQL/PostgreSQL** - Cơ sở dữ liệu quan hệ
-- **Web3j** - Java library cho Ethereum blockchain
-- **Maven/Gradle** - Build tool và dependency management
-- **JWT (JSON Web Tokens)** - Authentication
-- **Lombok** - Giảm boilerplate code
+### Backend (Node.js)
+- **Node.js 18+** - JavaScript runtime
+- **Express.js** - Web framework
+- **MongoDB** - NoSQL database
+- **Mongoose** - MongoDB ODM
+- **JWT (jsonwebtoken)** - Authentication & authorization
+- **bcrypt** - Password hashing
+- **Web3.js** - Ethereum blockchain interaction
+- **ethers.js** - Ethereum library
+- **CORS** - Cross-Origin Resource Sharing
+- **dotenv** - Environment variables management
 
 ### Frontend (React)
 - **React 18.3.1** - Thư viện UI hiện đại
 - **JavaScript (ES6+)** - Ngôn ngữ lập trình
 - **Vite 6.3.5** - Build tool nhanh và tối ưu
-- **React Router 7.13.0** - Routing
-- **Tailwind CSS 4.1.12** - Styling framework
+- **React Router 7.13.0** - Client-side routing
+- **Tailwind CSS 4.1.12** - Utility-first CSS framework
 
-### UI Components
+### UI Components & Libraries
 - **Material-UI (MUI) 7.3.5** - Component library chính
 - **Radix UI** - Accessible component primitives
-- **Recharts 2.15.2** - Biểu đồ và visualization
-- **Lucide React** - Icons
-- **React QR Code** - Tạo và đọc mã QR
-- **Sonner** - Toast notifications
+- **Recharts 2.15.2** - Biểu đồ và data visualization
+- **Lucide React** - Beautiful icon library
+- **React QR Code 2.0.18** - QR code generator
+- **html5-qrcode** - QR code scanner với camera
+- **Sonner** - Toast notifications elegant
 
-### Form & Validation
-- **React Hook Form 7.55.0** - Quản lý form
-- **Date-fns 3.6.0** - Xử lý ngày tháng
+### Form & Utilities
+- **React Hook Form 7.55.0** - Form management
+- **Date-fns 3.6.0** - Date manipulation
+- **clsx** - Conditional className utility
+- **Canvas API** - QR code download (SVG to PNG)
 
 ### Blockchain
-- **Ethereum/Hyperledger Fabric** - Blockchain platform
-- **Solidity** - Smart contract language (Ethereum)
-- **Truffle/Hardhat** - Smart contract development
-- **IPFS** - Decentralized file storage
-- **Web3j** - Java library tương tác với blockchain
+- **Ethereum** - Blockchain platform
+- **Ganache** - Local Ethereum blockchain for development
+- **Solidity** - Smart contract programming language
+- **Truffle/Hardhat** - Smart contract development framework
+- **Web3.js/Ethers.js** - Blockchain interaction libraries
 
 ### DevOps & Tools
 - **Docker** - Containerization
 - **Git** - Version control
-- **Postman** - API testing
-- **Swagger/OpenAPI** - API documentation
+- **Postman/Thunder Client** - API testing
+- **MongoDB Atlas** - Cloud database (production)
 
 ## 📁 Cấu Trúc Dự Án
 
 ```
 Blockchain_Nhom13/
-├── backend/                   # Java Spring Boot Backend
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── com/blockchain/food/
-│   │   │   │       ├── FoodTraceabilityApplication.java
-│   │   │   │       ├── config/          # Configuration classes
-│   │   │   │       │   ├── SecurityConfig.java
-│   │   │   │       │   ├── Web3Config.java
-│   │   │   │       │   └── SwaggerConfig.java
-│   │   │   │       ├── controller/      # REST API Controllers
-│   │   │   │       │   ├── AuthController.java
-│   │   │   │       │   ├── ProductController.java
-│   │   │   │       │   ├── SupplyChainController.java
-│   │   │   │       │   └── BlockchainController.java
-│   │   │   │       ├── model/           # Entity models
-│   │   │   │       │   ├── User.java
-│   │   │   │       │   ├── Product.java
-│   │   │   │       │   ├── SupplyChainStep.java
-│   │   │   │       │   └── BlockchainTransaction.java
-│   │   │   │       ├── repository/      # JPA Repositories
-│   │   │   │       │   ├── UserRepository.java
-│   │   │   │       │   ├── ProductRepository.java
-│   │   │   │       │   └── TransactionRepository.java
-│   │   │   │       ├── service/         # Business logic
-│   │   │   │       │   ├── AuthService.java
-│   │   │   │       │   ├── ProductService.java
-│   │   │   │       │   ├── BlockchainService.java
-│   │   │   │       │   └── QRCodeService.java
-│   │   │   │       ├── dto/             # Data Transfer Objects
-│   │   │   │       │   ├── LoginRequest.java
-│   │   │   │       │   ├── ProductDTO.java
-│   │   │   │       │   └── ApiResponse.java
-│   │   │   │       ├── security/        # Security components
-│   │   │   │       │   ├── JwtTokenProvider.java
-│   │   │   │       │   └── JwtAuthenticationFilter.java
-│   │   │   │       └── exception/       # Exception handlers
-│   │   │   │           └── GlobalExceptionHandler.java
-│   │   │   └── resources/
-│   │   │       ├── application.properties
-│   │   │       ├── application-dev.properties
-│   │   │       └── application-prod.properties
-│   │   └── test/               # Unit & Integration tests
-│   ├── pom.xml                 # Maven dependencies
+├── backend/                      # Node.js Express Backend
+│   ├── config/                   # Configuration files
+│   │   └── database.js          # MongoDB connection config
+│   ├── contracts/               # Smart Contracts (Solidity)
+│   │   ├── FoodSupplyChain.sol # Main smart contract
+│   │   └── build/              # Compiled contracts
+│   ├── controllers/             # Request handlers
+│   │   ├── auth.controller.js  # Authentication logic
+│   │   ├── product.controller.js # Product CRUD operations
+│   │   └── user.controller.js  # User management
+│   ├── middleware/              # Express middlewares
+│   │   ├── auth.middleware.js  # JWT verification
+│   │   └── errorHandler.js     # Error handling
+│   ├── models/                  # Mongoose schemas
+│   │   ├── User.model.js       # User schema
+│   │   ├── Product.model.js    # Product schema
+│   │   └── Transaction.model.js # Blockchain transaction
+│   ├── routes/                  # API routes
+│   │   ├── auth.routes.js      # Auth endpoints
+│   │   ├── product.routes.js   # Product endpoints
+│   │   └── user.routes.js      # User endpoints
+│   ├── services/                # Business logic layer
+│   │   ├── blockchain.service.js # Blockchain interaction
+│   │   ├── product.service.js  # Product operations
+│   │   └── auth.service.js     # Authentication
+│   ├── utils/                   # Utility functions
+│   │   ├── logger.js           # Logging utility
+│   │   └── validators.js       # Input validation
+│   ├── .env                     # Environment variables
+│   ├── server.js               # Main entry point
+│   ├── package.json            # Dependencies
 │   └── Dockerfile              # Docker configuration
 │
-├── frontend/                   # React Frontend
+├── frontend/                    # React Frontend
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── components/     # Reusable components
+│   │   │   │   ├── figma/     # Figma design components
+│   │   │   │   ├── layout/    # Layout components
+│   │   │   │   │   └── DashboardLayout.jsx
+│   │   │   │   └── ui/        # UI primitives (shadcn/ui)
+│   │   │   │       ├── button.tsx
+│   │   │   │       ├── card.tsx
+│   │   │   │       ├── dialog.tsx
+│   │   │   │       └── ... (40+ components)
+│   │   │   ├── contexts/      # React Context providers
+│   │   │   │   └── AuthContext.jsx # Auth state management
+│   │   │   ├── pages/         # Page components
+│   │   │   │   ├── BlockchainLogsPage.jsx # Blockchain history
+│   │   │   │   ├── CreateProductPage.jsx  # Create product form
+│   │   │   │   ├── DashboardPage.jsx      # Main dashboard
+│   │   │   │   ├── LoginPage.jsx          # Login/Register
+│   │   │   │   ├── MyProductsPage.jsx     # Manufacturer products
+│   │   │   │   ├── ProductsManagementPage.jsx # Admin CRUD
+│   │   │   │   ├── ProfilePage.jsx        # User profile
+│   │   │   │   ├── ScanQRPage.jsx         # QR scanner with camera
+│   │   │   │   ├── StoreProductsPage.jsx  # Store inventory
+│   │   │   │   ├── TransportPage.jsx      # Transport tracking
+│   │   │   │   └── UsersManagementPage.jsx # Admin user CRUD
+│   │   │   ├── services/      # API client services
+│   │   │   │   ├── apiService.js # Axios instance & API calls
+│   │   │   │   ├── blockchain.js # Blockchain queries
+│   │   │   │   └── storage.js # LocalStorage utilities
+│   │   │   ├── App.jsx        # Root component
+│   │   │   ├── routes.jsx     # Route configuration
+│   │   │   └── types.js       # Type definitions
+│   │   └── styles/            # Global styles
+│   │       ├── fonts.css
+│   │       ├── index.css
+│   │       ├── tailwind.css
+│   │       └── theme.css
+│   ├── public/                # Static assets
+│   ├── package.json           # Frontend dependencies
+│   ├── vite.config.js        # Vite configuration
+│   ├── postcss.config.mjs    # PostCSS config
+│   └── Dockerfile            # Frontend Docker config
+│
+├── docker-compose.yml         # Multi-container setup
+├── .gitignore                # Git ignore rules
+├── QUICKSTART.md             # Quick setup guide
+└── README.md                 # Project documentation
+```
+
+## 🚀 Cài Đặt
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── components/         # Các components tái sử dụng
@@ -187,29 +234,35 @@ Blockchain_Nhom13/
 ## 🚀 Cài Đặt và Chạy Dự Án
 
 ### Yêu Cầu Hệ Thống
-- **Java**: JDK 17 hoặc cao hơn
-- **Node.js**: >= 16.x
-- **Database**: MySQL 8.0+ hoặc PostgreSQL 13+
-- **Maven**: 3.8+ hoặc Gradle 7+
-- **Docker** (tùy chọn): Để chạy với containers
+- **Node.js**: >= 18.x (LTS recommended)
+- **npm** hoặc **pnpm**: Latest version
+- **MongoDB**: 5.0+ (Local hoặc MongoDB Atlas)
+- **Ganache**: Ethereum local blockchain (optional)
 - **Git**: Version control
+- **Docker** (tùy chọn): Để chạy với containers
 
 ### ⚡ Quick Start (Khuyến nghị)
 
-Cách nhanh nhất để chạy toàn bộ hệ thống với Docker:
+Cách nhanh nhất để chạy toàn bộ hệ thống:
 
 ```bash
 # Clone repository
-git clone <repository-url>
-cd Blockchain_Nhom13
+git clone https://github.com/mthang045/Blockchain-Based-Food-Traceability-System.git
+cd Blockchain-Based-Food-Traceability-System
 
-# Chạy tất cả services (Backend + Frontend + Database)
-docker-compose up -d
+# Chạy Backend
+cd backend
+npm install
+npm start
+
+# Chạy Frontend (terminal mới)
+cd frontend
+npm install
+npm run dev
 
 # Truy cập:
-# - Frontend: http://localhost:3000
-# - Backend API: http://localhost:8080/api
-# - Swagger Docs: http://localhost:8080/swagger-ui.html
+# - Frontend: http://localhost:5175
+# - Backend API: http://localhost:3000
 ```
 
 ### 📝 Development Setup (Chi tiết)
@@ -218,64 +271,87 @@ docker-compose up -d
 
 #### 1. Clone Repository
 ```bash
-git clone <repository-url>
-cd Blockchain_Nhom13
+git clone https://github.com/mthang045/Blockchain-Based-Food-Traceability-System.git
+cd Blockchain-Based-Food-Traceability-System
 ```
 
-#### 2. Cài Đặt và Chạy Backend (Java Spring Boot)
+#### 2. Cài Đặt và Chạy Backend (Node.js + Express)
 
-**2.1. Cấu hình Database**
+**2.1. Cấu hình MongoDB**
 ```bash
-# Tạo database MySQL
-mysql -u root -p
-CREATE DATABASE food_traceability;
-CREATE USER 'fooduser'@'localhost' IDENTIFIED BY 'password';
-GRANT ALL PRIVILEGES ON food_traceability.* TO 'fooduser'@'localhost';
-FLUSH PRIVILEGES;
+# Option 1: MongoDB Local
+# Cài đặt MongoDB Community Edition
+# https://www.mongodb.com/try/download/community
+
+# Khởi động MongoDB service
+# Windows: MongoDB sẽ tự chạy sau khi cài đặt
+# macOS: brew services start mongodb-community
+# Linux: sudo systemctl start mongod
+
+# Option 2: MongoDB Atlas (Cloud)
+# Tạo free cluster tại: https://www.mongodb.com/atlas
+# Lấy connection string
 ```
 
-**2.2. Cấu hình application.properties**
+**2.2. Cấu hình Environment Variables**
 ```bash
-cd backend/src/main/resources
-# Sửa file application.properties với thông tin database của bạn
+cd backend
+cp .env.example .env  # Hoặc tạo file .env mới
+
+# Sửa file .env với thông tin của bạn:
 ```
 
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/food_traceability
-spring.datasource.username=fooduser
-spring.datasource.password=password
-spring.jpa.hibernate.ddl-auto=update
+```env
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# MongoDB Configuration
+MONGODB_URI=mongodb://localhost:27017/food_traceability
+# Hoặc MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/food_traceability
 
 # JWT Configuration
-jwt.secret=your-secret-key
-jwt.expiration=86400000
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_EXPIRES_IN=24h
 
-# Blockchain Configuration
-blockchain.network.url=http://localhost:8545
-blockchain.contract.address=0x...
+# Blockchain Configuration (Ganache)
+BLOCKCHAIN_NETWORK=http://localhost:7545
+CONTRACT_ADDRESS=0xYourContractAddress
+PRIVATE_KEY=0xYourPrivateKey
+
+# CORS
+FRONTEND_URL=http://localhost:5175
 ```
 
-**2.3. Build và chạy Backend**
+**2.3. Cài đặt dependencies và chạy Backend**
 ```bash
 cd backend
 
-# Sử dụng Maven
-mvn clean install
-mvn spring-boot:run
+# Cài đặt packages
+npm install
 
-# Hoặc sử dụng Gradle
-gradle build
-gradle bootRun
+# Chạy development mode (với nodemon)
+npm run dev
 
-# Backend sẽ chạy tại: http://localhost:8080
+# Hoặc chạy production mode
+npm start
+
+# Backend sẽ chạy tại: http://localhost:3000
 ```
 
-**2.4. Kiểm tra API Documentation**
-```
-Truy cập Swagger UI: http://localhost:8080/swagger-ui.html
+**2.4. Test API Endpoints**
+```bash
+# Health check
+curl http://localhost:3000/api/health
+
+# Login (example)
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'
 ```
 
-#### 3. Cài Đặt và Chạy Frontend (React)
+#### 3. Cài Đặt và Chạy Frontend (React + Vite)
 
 **3.1. Cài đặt dependencies**
 ```bash
@@ -284,192 +360,346 @@ cd frontend
 # Sử dụng npm
 npm install
 
-# Hoặc sử dụng pnpm (khuyến nghị)
+# Hoặc sử dụng pnpm (nhanh hơn)
 pnpm install
-
-# Hoặc sử dụng yarn
-yarn install
 ```
 
 **3.2. Cấu hình API endpoint**
 ```javascript
-// frontend/src/app/services/api.js
-const API_BASE_URL = 'http://localhost:8080/api';
+// frontend/src/app/services/apiService.js
+// API_BASE_URL đã được cấu hình sẵn: http://localhost:3000/api
 ```
 
 **3.3. Chạy development server**
 ```bash
 npm run dev
-# hoặc
-pnpm dev
-# hoặc
-yarn dev
 
-# Frontend sẽ chạy tại: http://localhost:5173
+# Frontend sẽ chạy tại: http://localhost:5175
 ```
 
 **3.4. Build cho production**
 ```bash
 npm run build
-# hoặc
-pnpm build
+
+# Output sẽ ở thư mục: dist/
+# Deploy dist/ folder lên hosting (Vercel, Netlify, etc.)
 ```
 
-#### 4. Chạy với Docker (Tùy chọn)
+#### 4. Cài Đặt Blockchain Local (Ganache)
+
+```bash
+# Cài đặt Ganache CLI
+npm install -g ganache-cli
+
+# Hoặc tải Ganache GUI từ:
+# https://trufflesuite.com/ganache/
+
+# Chạy Ganache
+ganache-cli -p 7545
+
+# Ganache sẽ tạo 10 test accounts với 100 ETH mỗi account
+```
+
+#### 5. Deploy Smart Contracts
+
+```bash
+cd backend/contracts
+
+# Cài đặt Truffle (nếu chưa có)
+npm install -g truffle
+
+# Compile contracts
+truffle compile
+
+# Deploy lên Ganache local network
+truffle migrate --network development
+
+# Lưu Contract Address vào .env file
+```
+
+#### 6. Chạy với Docker (Tùy chọn)
 
 ```bash
 # Build và chạy tất cả services
 docker-compose up -d
 
-# Backend: http://localhost:8080
-# Frontend: http://localhost:3000
-# Database: localhost:3306
-```
-
-#### 5. Deploy Smart Contracts (Nếu dùng Ethereum)
-
-```bash
-cd smart-contracts
-npm install
-npx truffle migrate --network development
-# hoặc
-npx hardhat run scripts/deploy.js --network localhost
+# Backend: http://localhost:3000
+# Frontend: http://localhost:5175
+# MongoDB: localhost:27017
+# Ganache: localhost:7545
 ```
 
 ## 📖 Hướng Dẫn Sử Dụng
 
 ### 1. Đăng Nhập
-- Truy cập trang đăng nhập
-- Nhập thông tin tài khoản
-- Chọn vai trò phù hợp (Producer/Distributor/Consumer)
+- Truy cập: http://localhost:5175
+- Đăng ký tài khoản mới hoặc đăng nhập
+- Chọn vai trò: ADMIN, MANUFACTURER, TRANSPORTER, STORE, CONSUMER
 
-### 2. Người Sản Xuất (Producer)
-- **Tạo sản phẩm mới**: Nhập thông tin sản phẩm, hình ảnh, nguồn gốc
-- **Quản lý sản phẩm**: Xem danh sách, chỉnh sửa, xóa sản phẩm
-- **Xem lịch sử blockchain**: Theo dõi các giao dịch liên quan
+### 2. Nhà Sản Xuất (MANUFACTURER)
+- **Tạo sản phẩm mới**: 
+  - Điền tên, xuất xứ, mô tả, hạn sử dụng
+  - Hệ thống tự động tạo QR code và ghi lên blockchain
+- **Quản lý sản phẩm**: 
+  - Xem danh sách sản phẩm của mình
+  - Download QR code dưới dạng PNG
+  - In nhãn QR code với template chuyên nghiệp
+- **Xem lịch sử blockchain**: Theo dõi mọi thay đổi với transaction hash
 
-### 3. Nhà Phân Phối (Distributor)  
+### 3. Người Vận Chuyển (TRANSPORTER)
 - **Cập nhật vận chuyển**: Ghi nhận các điểm trung chuyển
-- **Quản lý lô hàng**: Theo dõi trạng thái vận chuyển
-- **Xác nhận blockchain**: Mỗi bước được ghi vào blockchain
+- **Quản lý lô hàng**: Theo dõi trạng thái (InTransit)
+- **Xác nhận blockchain**: Mỗi cập nhật được ghi lên blockchain
 
-### 4. Người Tiêu Dùng (Consumer)
-- **Quét mã QR**: Sử dụng camera để quét QR code trên sản phẩm
-- **Xem thông tin**: Xem đầy đủ thông tin nguồn gốc và hành trình
-- **Xác minh**: Kiểm tra tính hợp lệ của dữ liệu
+### 4. Cửa Hàng (STORE)
+- **Nhận hàng**: Cập nhật trạng thái Delivered
+- **Quản lý kho**: Xem inventory
+- **Truy xuất nguồn gốc**: Xem toàn bộ lịch sử sản phẩm
 
-### 5. Admin
-- **Quản lý người dùng**: Thêm, sửa, xóa tài khoản
-- **Quản lý sản phẩm**: Giám sát toàn bộ sản phẩm trong hệ thống
-- **Xem báo cáo**: Thống kê và phân tích dữ liệu
+### 5. Người Tiêu Dùng (CONSUMER)
+- **Quét QR bằng camera**: Mở Camera sau để scan QR code
+- **Nhập mã thủ công**: Nhập QR code nếu không có camera
+- **Xem thông tin đầy đủ**: 
+  - Nguồn gốc sản phẩm
+  - Nhà sản xuất
+  - Lịch sử vận chuyển
+  - Transaction hash blockchain
+- **Xác minh**: Kiểm tra tính hợp lệ trên blockchain
+
+### 6. Admin (ADMIN)
+- **Quản lý người dùng**: CRUD operations cho tất cả users
+- **Quản lý sản phẩm**: 
+  - Xem tất cả sản phẩm trong hệ thống
+  - Thêm, sửa, xóa bất kỳ sản phẩm nào
+  - Download/Print QR codes
+- **Dashboard**: Thống kê tổng quan hệ thống
+- **Blockchain Logs**: Xem tất cả transactions
 
 ## 🔐 Blockchain & Smart Contracts
 
 ### Architecture
 ```
-┌─────────────┐      REST API      ┌──────────────┐      Web3j      ┌─────────────┐
-│   React     │ ←──────────────→   │ Spring Boot  │ ←────────────→  │  Ethereum   │
-│  Frontend   │     HTTP/JSON      │   Backend    │   JSON-RPC     │  Blockchain │
-└─────────────┘                    └──────────────┘                 └─────────────┘
-       ↓                                   ↓                               ↓
-   LocalStorage                        MySQL/PostgreSQL            Smart Contracts
+┌─────────────┐      REST API      ┌──────────────┐    Web3.js/Ethers    ┌─────────────┐
+│   React     │ ←──────────────→   │   Express    │ ←──────────────────→ │   Ganache   │
+│  Frontend   │     HTTP/JSON      │   Backend    │      JSON-RPC        │  Blockchain │
+└─────────────┘                    └──────────────┘                       └─────────────┘
+       ↓                                   ↓                                     ↓
+   LocalStorage                        MongoDB                          Smart Contracts
+   (Auth Token)                    (Products, Users)                  (Solidity .sol files)
 ```
 
-### Smart Contracts (Solidity)
+### Smart Contract (Solidity)
 
-**ProductRegistry.sol**
+**FoodSupplyChain.sol**
 ```solidity
-// Quản lý thông tin sản phẩm
-- registerProduct()     // Đăng ký sản phẩm mới
-- updateProduct()       // Cập nhật thông tin
-- getProduct()          // Lấy thông tin sản phẩm
-- verifyProduct()       // Xác minh tính hợp lệ
-```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-**SupplyChain.sol**
-```solidity
-// Quản lý chuỗi cung ứng
-- addSupplyChainStep()  // Thêm bước vận chuyển
-- getProductHistory()   // Lấy lịch sử sản phẩm
-- getCurrentOwner()     // Lấy chủ sở hữu hiện tại
-- transferOwnership()   // Chuyển quyền sở hữu
-```
-
-### Backend Blockchain Service (Java)
-
-```java
-@Service
-public class BlockchainService {
-    // Kết nối với Ethereum node thông qua Web3j
-    private Web3j web3j;
-    
-    // Ghi dữ liệu lên blockchain
-    public String writeToBlockchain(ProductData data) {
-        // Tạo transaction và gửi lên smart contract
-        // Trả về transaction hash
+contract FoodSupplyChain {
+    // Struct để lưu thông tin sản phẩm
+    struct Product {
+        uint256 productId;
+        string name;
+        string origin;
+        address producer;
+        uint256 timestamp;
+        string status;
+        bool exists;
     }
     
-    // Đọc dữ liệu từ blockchain
-    public ProductData readFromBlockchain(String txHash) {
-        // Query smart contract
-        // Trả về dữ liệu sản phẩm
+    // Mapping productId => Product
+    mapping(uint256 => Product) public products;
+    
+    // Events
+    event ProductCreated(uint256 indexed productId, string name, address producer);
+    event ProductUpdated(uint256 indexed productId, string status, address updater);
+    
+    // Đăng ký sản phẩm mới
+    function registerProduct(
+        uint256 _productId,
+        string memory _name,
+        string memory _origin
+    ) public {
+        require(!products[_productId].exists, "Product already exists");
+        
+        products[_productId] = Product({
+            productId: _productId,
+            name: _name,
+            origin: _origin,
+            producer: msg.sender,
+            timestamp: block.timestamp,
+            status: "Produced",
+            exists: true
+        });
+        
+        emit ProductCreated(_productId, _name, msg.sender);
     }
     
-    // Xác minh dữ liệu
-    public boolean verifyData(String hash, ProductData data) {
-        // So sánh hash và verify signature
+    // Cập nhật trạng thái sản phẩm
+    function updateProductStatus(
+        uint256 _productId,
+        string memory _status
+    ) public {
+        require(products[_productId].exists, "Product does not exist");
+        
+        products[_productId].status = _status;
+        emit ProductUpdated(_productId, _status, msg.sender);
+    }
+    
+    // Lấy thông tin sản phẩm
+    function getProduct(uint256 _productId) 
+        public 
+        view 
+        returns (Product memory) 
+    {
+        require(products[_productId].exists, "Product does not exist");
+        return products[_productId];
     }
 }
+```
+
+### Backend Blockchain Service (Node.js)
+
+```javascript
+// backend/services/blockchain.service.js
+const Web3 = require('web3');
+const contractABI = require('../contracts/build/FoodSupplyChain.json');
+
+class BlockchainService {
+    constructor() {
+        this.web3 = new Web3(process.env.BLOCKCHAIN_NETWORK);
+        this.contract = new this.web3.eth.Contract(
+            contractABI.abi,
+            process.env.CONTRACT_ADDRESS
+        );
+    }
+    
+    // Ghi sản phẩm lên blockchain
+    async registerProduct(productData) {
+        const accounts = await this.web3.eth.getAccounts();
+        const receipt = await this.contract.methods
+            .registerProduct(
+                productData.productId,
+                productData.name,
+                productData.origin
+            )
+            .send({ from: accounts[0], gas: 300000 });
+        
+        return receipt.transactionHash;
+    }
+    
+    // Cập nhật trạng thái
+    async updateProductStatus(productId, status) {
+        const accounts = await this.web3.eth.getAccounts();
+        const receipt = await this.contract.methods
+            .updateProductStatus(productId, status)
+            .send({ from: accounts[0], gas: 200000 });
+        
+        return receipt.transactionHash;
+    }
+    
+    // Đọc thông tin từ blockchain
+    async getProduct(productId) {
+        return await this.contract.methods
+            .getProduct(productId)
+            .call();
+    }
+    
+    // Xác minh transaction
+    async verifyTransaction(txHash) {
+        const receipt = await this.web3.eth.getTransactionReceipt(txHash);
+        return receipt && receipt.status;
+    }
+}
+
+module.exports = new BlockchainService();
 ```
 
 ### Transaction Structure
 Mỗi giao dịch trên blockchain bao gồm:
 - **Transaction Hash**: Mã băm duy nhất (0x...)
 - **Block Number**: Số block chứa transaction
-- **Type**: Loại giao dịch (product_created, supply_chain_updated)
-- **Product ID**: ID sản phẩm liên quan
-- **From/To Address**: Địa chỉ ví người gửi/nhận
-- **Data**: Dữ liệu chi tiết (mã hóa)
-- **Gas Used**: Phí transaction
-- **Timestamp**: Thời gian giao dịch
-- **Confirmations**: Số confirmations
+- **From Address**: Địa chỉ ví người gửi
+- **To Address**: Địa chỉ smart contract
+- **Gas Used**: Phí transaction (wei)
+- **Timestamp**: Thời gian block được mine
+- **Status**: Success (1) hoặc Fail (0)
+- **Events**: ProductCreated, ProductUpdated logs
 
 ### Data Flow
-1. **Frontend** → Gửi request tạo sản phẩm
-2. **Backend** → Validate và lưu vào MySQL
-3. **Backend** → Gọi smart contract qua Web3j
-4. **Blockchain** → Xử lý transaction và trả về hash
-5. **Backend** → Lưu transaction hash vào database
-6. **Frontend** → Hiển thị kết quả và QR code
+1. **Frontend** → User tạo sản phẩm → POST /api/products
+2. **Backend** → Validate dữ liệu → Lưu vào MongoDB
+3. **Backend** → Gọi blockchain.service.registerProduct()
+4. **Smart Contract** → Xử lý transaction → Emit event
+5. **Backend** → Nhận transaction hash → Update product.blockchainTxHash
+6. **Frontend** → Hiển thị sản phẩm + QR code + blockchain hash
 
 ## 📸 Screenshots
 
-<!-- Thêm screenshots của ứng dụng tại đây -->
-```
-[Dashboard] - [Product Management] - [QR Scan] - [Blockchain Logs]
-```
+### Dashboard
+![Dashboard](./screenshots/dashboard.png)
+*Tổng quan hệ thống với thống kê và biểu đồ*
+
+### QR Scanner
+![QR Scanner](./screenshots/qr-scanner.png)
+*Quét QR code bằng camera để xem thông tin sản phẩm*
+
+### Product Management
+![Product Management](./screenshots/products.png)
+*Quản lý sản phẩm với CRUD operations*
+
+### QR Code Download & Print
+![QR Download](./screenshots/qr-download.png)
+*Tải xuống và in QR code với template chuyên nghiệp*
 
 ## 👥 Nhóm Phát Triển
 
-**Nhóm 13**
-- Thành viên 1 - [Vai trò]
-- Thành viên 2 - [Vai trò]
-- Thành viên 3 - [Vai trò]
-- Thành viên 4 - [Vai trò]
-- Thành viên 5 - [Vai trò]
+**Nhóm 13 - Blockchain Food Traceability System**
+- Phạm Minh Tân - Team Lead & Backend Developer
+- Thành viên 2 - Frontend Developer
+- Thành viên 3 - Smart Contract Developer
+- Thành viên 4 - UI/UX Designer
+- Thành viên 5 - QA Tester
 
 ## 📝 Roadmap
 
-### Phase 1 - Current ✅
-- [x] Thiết kế UI/UX
-- [x] Xây dựng các trang chính
-- [x] Mock blockchain service
-- [x] QR code generation/scanning
+### Phase 1 - Completed ✅
+- [x] Thiết kế UI/UX với Figma
+- [x] Xây dựng React frontend với Vite
+- [x] Node.js Express backend API
+- [x] MongoDB database integration
+- [x] JWT authentication & authorization
+- [x] Role-based access control (5 roles)
+- [x] QR code generation (react-qr-code)
 
-### Phase 2 - In Progress 🚧
-- [x] Java Spring Boot backend API
-- [x] MySQL database integration
-- [x] JWT authentication
+### Phase 2 - Completed ✅
+- [x] Smart contract development (Solidity)
+- [x] Ganache local blockchain setup
+- [x] Web3.js integration
+- [x] Product CRUD operations
+- [x] User management (Admin)
+- [x] Blockchain transaction recording
+- [x] QR code scanner với camera (html5-qrcode)
+- [x] QR code download (PNG format)
+- [x] QR code print với template
+- [x] Product description/notes field
+
+### Phase 3 - In Progress 🚧
+- [ ] Deploy smart contracts to Ethereum testnet (Sepolia/Goerli)
+- [ ] IPFS integration for product images
+- [ ] Enhanced blockchain verification
+- [ ] Real-time notifications
+- [ ] Advanced analytics dashboard
+- [ ] Export reports (PDF/Excel)
+
+### Phase 4 - Future 📅
+- [ ] Mobile app (React Native)
+- [ ] AI-powered fraud detection
+- [ ] IoT sensor integration
+- [ ] Multi-language support (EN, VI, CN)
+- [ ] Supply chain optimization AI
+- [ ] NFT certificates for products
+- [ ] Integration with external APIs (weather, logistics)
 - [ ] Smart contracts deployment to testnet
 - [ ] Web3j integration
 - [ ] IPFS integration for images
@@ -491,14 +721,51 @@ Mọi đóng góp đều được chào đón! Vui lòng:
 
 ## 📄 License
 
-Dự án này được phát triển cho mục đích học tập và nghiên cứu.
+Dự án này được phát triển cho mục đích học tập và nghiên cứu.  
+Licensed under the MIT License.
 
 ## 📞 Liên Hệ
 
-- **Email**: [your-email@example.com]
-- **GitHub**: [github-link]
-- **Website**: [website-link]
+- **GitHub Repository**: [https://github.com/mthang045/Blockchain-Based-Food-Traceability-System](https://github.com/mthang045/Blockchain-Based-Food-Traceability-System)
+- **Issues**: [Report bugs or request features](https://github.com/mthang045/Blockchain-Based-Food-Traceability-System/issues)
+- **Email**: Contact through GitHub
+
+## 🎓 Trường Đại Học
+
+Đại học [Tên trường] - Khoa Công nghệ Thông tin  
+Môn: Blockchain và Ứng dụng  
+Năm học: 2025-2026
 
 ---
 
-**⭐ Nếu dự án hữu ích, đừng quên để lại một star!**
+**⭐ Nếu dự án hữu ích, đừng quên để lại một star trên GitHub!**
+
+## 📚 Tài Liệu Tham Khảo
+
+- [Ethereum Documentation](https://ethereum.org/en/developers/docs/)
+- [Solidity Documentation](https://docs.soliditylang.org/)
+- [Web3.js Documentation](https://web3js.readthedocs.io/)
+- [React Documentation](https://react.dev/)
+- [Express.js Guide](https://expressjs.com/)
+- [MongoDB Manual](https://docs.mongodb.com/)
+
+## 🔒 Security
+
+Báo cáo các vấn đề bảo mật qua GitHub Issues hoặc email riêng tư.  
+**Không** public security vulnerabilities trên GitHub Issues.
+
+## ⚡ Performance
+
+- Frontend: Tối ưu với Vite build tool và code splitting
+- Backend: Node.js với clustering support
+- Database: MongoDB indexing cho queries nhanh
+- Blockchain: Gas optimization trong smart contracts
+
+## 🌟 Features Highlights
+
+- ✅ **Real-time QR Scanning**: Camera support với html5-qrcode
+- ✅ **Professional QR Labels**: Download PNG & Print với template
+- ✅ **Blockchain Verification**: Mỗi transaction có unique hash
+- ✅ **Role-Based Security**: 5 roles với permissions riêng biệt
+- ✅ **Responsive Design**: Mobile-first với Tailwind CSS
+- ✅ **Modern UI**: shadcn/ui components với Radix UI

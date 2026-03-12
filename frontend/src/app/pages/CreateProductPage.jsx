@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { storageService } from '../services/storage';
-import { blockchainService } from '../services/blockchain';
+import { productAPI } from '../services/apiService';
 import { Package, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,6 +11,7 @@ export default function CreateProductPage() {
 
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     productionPlace: '',
     productionDate: '',
     expiryDate: '',
@@ -29,60 +29,51 @@ export default function CreateProductPage() {
     setIsSubmitting(true);
 
     try {
-      // Create product
-      const productId = crypto.randomUUID();
-      const qrCode = `FOODCHAIN-${productId.substring(0, 8).toUpperCase()}`;
+      // Generate product ID and QR code
+      const productId = `PROD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`.toUpperCase();
+      const qrCode = `FOODCHAIN-${productId}`;
 
-      const product = {
-        id: productId,
-        ...formData,
-        producerId: user.id,
-        producerName: user.name,
-        currentStatus: 'Đã tạo',
-        qrCode,
-        createdAt: new Date().toISOString(),
+      // Prepare product data for API
+      const productData = {
+        productId: productId,
+        name: formData.name,
+        description: formData.description || `Sản xuất tại ${formData.productionPlace}`,
+        category: 'FOOD',
+        origin: formData.productionPlace,
+        manufacturer: user.username || user.email,
+        manufacturerAddress: user.walletAddress || user._id,
+        qrCode: qrCode,
+        currentStatus: 'MANUFACTURED',
       };
 
-      // Write to blockchain
-      const blockchainHash = await blockchainService.writeProductToBlockchain(product);
-      product.blockchainHash = blockchainHash;
+      // Send to backend API
+      const response = await productAPI.createProduct(productData);
 
-      // Save to storage
-      storageService.addProduct(product);
+      if (response.success) {
+        const product = {
+          ...response.data,
+          productionDate: formData.productionDate,
+          expiryDate: formData.expiryDate,
+        };
 
-      // Create initial supply chain step
-      const initialStep = {
-        id: crypto.randomUUID(),
-        productId: product.id,
-        step: 'harvest',
-        stepName: 'Thu hoạch',
-        timestamp: new Date().toISOString(),
-        location: formData.productionPlace,
-        performedBy: user.name,
-        performedById: user.id,
-        status: 'Hoàn thành',
-        notes: 'Sản phẩm được tạo và thu hoạch',
-      };
+        setCreatedProduct(product);
+        setShowSuccess(true);
+        toast.success('Tạo sản phẩm thành công và đã ghi lên Blockchain!');
 
-      const stepHash = await blockchainService.writeSupplyChainToBlockchain(initialStep);
-      initialStep.blockchainHash = stepHash;
-
-      storageService.addSupplyChainStep(initialStep);
-
-      setCreatedProduct(product);
-      setShowSuccess(true);
-      toast.success('Tạo sản phẩm thành công!');
-
-      // Reset form
-      setFormData({
-        name: '',
-        productionPlace: '',
-        productionDate: '',
-        expiryDate: '',
-      });
+        // Reset form
+        setFormData({
+          name: '',
+          description: '',
+          productionPlace: '',
+          productionDate: '',
+          expiryDate: '',
+        });
+      } else {
+        toast.error(response.message || 'Có lỗi xảy ra khi tạo sản phẩm');
+      }
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi tạo sản phẩm');
-      console.error(error);
+      toast.error(error.message || 'Có lỗi xảy ra khi tạo sản phẩm');
+      console.error('Error creating product:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -117,17 +108,36 @@ export default function CreateProductPage() {
                 {createdProduct.blockchainHash}
               </span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Mã sản phẩm:</span>
+              <span className="font-mono text-sm bg-white px-3 py-1 rounded">
+                {createdProduct.productId}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Blockchain TxHash:</span>
+              <span className="font-mono text-xs bg-white px-3 py-1 rounded truncate max-w-xs">
+                {createdProduct.blockchainTxHash || 'Đang xử lý...'}
+              </span>
+            </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <button
               onClick={() => {
                 setShowSuccess(false);
                 setCreatedProduct(null);
+                setFormData({
+                  name: '',
+                  description: '',
+                  productionPlace: '',
+                  productionDate: '',
+                  expiryDate: ''
+                });
               }}
               className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
-              Tạo sản phẩm khác
+              Tạo sản phẩmkhác
             </button>
             <button
               onClick={() => navigate('/my-products')}
@@ -175,6 +185,19 @@ export default function CreateProductPage() {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Ví dụ: Nông trại Xanh, Đà Lạt, Lâm Đồng"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-2">
+              Ghi chú / Mô tả
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="Ví dụ: Cà chua được trồng theo phương pháp hữu cơ, không sử dụng hóa chất..."
+              rows="3"
             />
           </div>
 

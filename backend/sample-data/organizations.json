@@ -1,0 +1,143 @@
+[
+  {
+    "organizationId": "ORG-2026-DALAT-001",
+    "name": "Dalat Fresh Farm",
+    "type": "FARM",
+    "description": "Organic farm in Dalat highlands specializing in fresh vegetables and fruits",
+    "walletAddress": "0x7fD311e28443fdF8A2027E81713Be04386081DAc",
+    "address": {
+      "street": "123 Highland Road, Ward 4",
+      "city": "Dalat",
+      "state": "Lam Dong",
+      "postalCode": "670000",
+      "country": "Vietnam"
+    },
+    "contact": {
+      "name": "Nguyen Van A",
+      "phone": "+84 912 345 678",
+      "email": "contact@dalatfarm.vn",
+      "position": "Farm Director"
+    },
+    "licenses": [
+      {
+        "licenseNumber": "VFA-DALAT-2026-001",
+        "licenseType": "Organic Farming Certificate",
+        "issueDate": "2026-01-01T00:00:00.000Z",
+        "expiryDate": "2027-01-01T00:00:00.000Z",
+        "issuingAuthority": "Vietnam Food Administration",
+        "isValid": true
+      }
+    ],
+    "certifications": [
+      {
+        "name": "GlobalGAP",
+        "issuedBy": "GlobalG.A.P. c/o FoodPLUS GmbH",
+        "issuedDate": "2025-06-01T00:00:00.000Z",
+        "expiryDate": "2026-06-01T00:00:00.000Z",
+        "certificateUrl": "https://ipfs.io/ipfs/QmCert123..."
+      }
+    ],
+    "taxId": "0123456789",
+    "isVerified": true,
+    "isActive": true,
+    "rating": 4.8,
+    "totalProducts": 156,
+    "totalTransactions": 423,
+    "metadata": {
+      "website": "https://dalatfarm.vn",
+      "logoUrl": "https://ipfs.io/ipfs/QmLogo123...",
+      "socialMedia": {
+        "facebook": "https://facebook.com/dalatfarm",
+        "twitter": "@dalatfarm"
+      }
+    },
+    "createdAt": "2026-01-15T00:00:00.000Z",
+    "updatedAt": "2026-03-12T00:00:00.000Z"
+  },
+  {
+    "organizationId": "ORG-2026-HCM-DIST-001",
+    "name": "HCM Distribution Center",
+    "type": "DISTRIBUTOR",
+    "description": "Major food distribution hub in Ho Chi Minh City",
+    "walletAddress": "0x8eE421E235C5A77F75ab951B16AB2E9ad37ddA12",
+    "address": {
+      "street": "456 Distribution Avenue, District 7",
+      "city": "Ho Chi Minh City",
+      "state": "Ho Chi Minh",
+      "postalCode": "700000",
+      "country": "Vietnam"
+    },
+    "contact": {
+      "name": "Tran Thi B",
+      "phone": "+84 909 876 543",
+      "email": "contact@hcmdist.vn",
+      "position": "Operations Manager"
+    },
+    "licenses": [
+      {
+        "licenseNumber": "VFA-HCM-2026-002",
+        "licenseType": "Food Distribution License",
+        "issueDate": "2026-01-10T00:00:00.000Z",
+        "expiryDate": "2027-01-10T00:00:00.000Z",
+        "issuingAuthority": "HCMC Food Safety Department",
+        "isValid": true
+      }
+    ],
+    "certifications": [],
+    "taxId": "9876543210",
+    "isVerified": true,
+    "isActive": true,
+    "rating": 4.5,
+    "totalProducts": 890,
+    "totalTransactions": 1250,
+    "metadata": {
+      "website": "https://hcmdist.vn",
+      "logoUrl": "https://ipfs.io/ipfs/QmLogo456..."
+    },
+    "createdAt": "2026-01-20T00:00:00.000Z",
+    "updatedAt": "2026-03-12T00:00:00.000Z"
+  },
+  {
+    "organizationId": "ORG-2026-COOPMART-001",
+    "name": "Co.op Mart Supermarket",
+    "type": "RETAILER",
+    "description": "Leading retail supermarket chain in Vietnam",
+    "walletAddress": "0x3456789012345678901234567890123456789012",
+    "address": {
+      "street": "789 Nguyen Van Linh, District 7",
+      "city": "Ho Chi Minh City",
+      "state": "Ho Chi Minh",
+      "postalCode": "700000",
+      "country": "Vietnam"
+    },
+    "contact": {
+      "name": "Le Van C",
+      "phone": "+84 908 765 432",
+      "email": "contact@coopmart.vn",
+      "position": "Store Manager"
+    },
+    "licenses": [
+      {
+        "licenseNumber": "RETAIL-HCM-2026-001",
+        "licenseType": "Retail Food Sales License",
+        "issueDate": "2026-02-01T00:00:00.000Z",
+        "expiryDate": "2027-02-01T00:00:00.000Z",
+        "issuingAuthority": "HCMC Department of Trade",
+        "isValid": true
+      }
+    ],
+    "certifications": [],
+    "taxId": "5555555555",
+    "isVerified": true,
+    "isActive": true,
+    "rating": 4.7,
+    "totalProducts": 2340,
+    "totalTransactions": 5678,
+    "metadata": {
+      "website": "https://coopmart.vn",
+      "logoUrl": "https://ipfs.io/ipfs/QmLogo789..."
+    },
+    "createdAt": "2026-02-10T00:00:00.000Z",
+    "updatedAt": "2026-03-12T00:00:00.000Z"
+  }
+]

@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, Phone, MapPin, Save, Edit } from 'lucide-react';
+import { User, Mail, Wallet, Building2, Save, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
+    username: user?.username || '',
+    company: user?.company || '',
   });
 
   const handleSubmit = (e) => {
@@ -20,11 +19,11 @@ export default function ProfilePage() {
   };
 
   const roleLabels = {
-    admin: 'Quản trị viên',
-    producer: 'Nhà sản xuất',
-    transporter: 'Nhà vận chuyển',
-    store: 'Cửa hàng',
-    consumer: 'Người tiêu dùng',
+    ADMIN: 'Quản trị viên',
+    MANUFACTURER: 'Nhà sản xuất',
+    TRANSPORTER: 'Nhà vận chuyển',
+    STORE: 'Cửa hàng',
+    CONSUMER: 'Người tiêu dùng',
   };
 
   if (!user) return null;
@@ -44,8 +43,8 @@ export default function ProfilePage() {
               <User className="w-10 h-10" />
             </div>
             <div>
-              <h2 className="text-2xl mb-1">{user.name}</h2>
-              <p className="opacity-90">{roleLabels[user.role]}</p>
+              <h2 className="text-2xl mb-1">{user.username}</h2>
+              <p className="opacity-90">{roleLabels[user.role] || user.role}</p>
             </div>
           </div>
         </div>
@@ -55,35 +54,24 @@ export default function ProfilePage() {
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm mb-2">Họ và tên</label>
+                <label className="block text-sm mb-2">Tên đăng nhập</label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm mb-2">Số điện thoại</label>
+                <label className="block text-sm mb-2">Công ty/Tổ chức</label>
                 <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="0901234567"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm mb-2">Địa chỉ</label>
-                <textarea
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  rows={3}
-                  placeholder="Địa chỉ của bạn"
+                  placeholder="Nhập tên công ty/tổ chức"
                 />
               </div>
 
@@ -93,9 +81,8 @@ export default function ProfilePage() {
                   onClick={() => {
                     setIsEditing(false);
                     setFormData({
-                      name: user.name,
-                      phone: user.phone || '',
-                      address: user.address || '',
+                      username: user.username,
+                      company: user.company || '',
                     });
                   }}
                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -124,24 +111,24 @@ export default function ProfilePage() {
               <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
                 <User className="w-5 h-5 text-gray-400 mt-1" />
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Họ và tên</p>
-                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-gray-600 mb-1">Tên đăng nhập</p>
+                  <p className="font-medium">{user.username}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                <Phone className="w-5 h-5 text-gray-400 mt-1" />
+                <Building2 className="w-5 h-5 text-gray-400 mt-1" />
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Số điện thoại</p>
-                  <p className="font-medium">{user.phone || 'Chưa cập nhật'}</p>
+                  <p className="text-sm text-gray-600 mb-1">Công ty/Tổ chức</p>
+                  <p className="font-medium">{user.company || 'Chưa cập nhật'}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                <MapPin className="w-5 h-5 text-gray-400 mt-1" />
+                <Wallet className="w-5 h-5 text-gray-400 mt-1" />
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Địa chỉ</p>
-                  <p className="font-medium">{user.address || 'Chưa cập nhật'}</p>
+                  <p className="text-sm text-gray-600 mb-1">Địa chỉ ví</p>
+                  <p className="font-medium font-mono text-sm break-all">{user.walletAddress || 'Chưa có'}</p>
                 </div>
               </div>
 
@@ -162,11 +149,11 @@ export default function ProfilePage() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">ID tài khoản:</span>
-              <span className="font-mono">{user.id}</span>
+              <span className="font-mono text-xs">{user._id}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Vai trò:</span>
-              <span>{roleLabels[user.role]}</span>
+              <span>{roleLabels[user.role] || user.role}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Ngày tạo:</span>

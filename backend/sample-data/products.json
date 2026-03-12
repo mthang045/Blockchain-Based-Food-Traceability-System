@@ -1,0 +1,141 @@
+[
+  {
+    "productId": "PROD-2026-APPLE-001",
+    "name": "Organic Red Apples",
+    "description": "Fresh organic red apples from Dalat highlands, rich in vitamins and antioxidants",
+    "category": "Fruits",
+    "producer": {
+      "name": "Dalat Fresh Farm",
+      "address": "0x7fD311e28443fdF8A2027E81713Be04386081DAc"
+    },
+    "ipfsHash": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+    "ipfsUrl": "https://ipfs.io/ipfs/QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+    "transactionHash": "0xa56a414e12a67ab46fc8bb884307abf3855e0e28875eb6a70034eced76b118cb",
+    "blockchainAddress": "0xFf7148Ccaa4DAbc26e508823ec2CfB729f957c6b",
+    "status": "Delivered",
+    "history": [
+      {
+        "actor": "Nguyen Van A",
+        "action": "Harvested from organic orchard",
+        "timestamp": "2026-03-10T06:00:00.000Z",
+        "location": "Dalat Farm, Lam Dong",
+        "notes": "Grade A quality, 500kg batch"
+      },
+      {
+        "actor": "Quality Control Team",
+        "action": "Quality inspection passed",
+        "timestamp": "2026-03-10T08:00:00.000Z",
+        "location": "Dalat Farm Processing Center",
+        "notes": "Pesticide-free, organic certified"
+      },
+      {
+        "actor": "Tran Van B (Driver)",
+        "action": "Shipped to HCM Distribution Center",
+        "timestamp": "2026-03-10T10:00:00.000Z",
+        "location": "On Route from Dalat to HCMC",
+        "notes": "Refrigerated truck, maintained 2-8°C"
+      },
+      {
+        "actor": "HCM Distribution Center",
+        "action": "Received at warehouse",
+        "timestamp": "2026-03-10T18:00:00.000Z",
+        "location": "HCM Warehouse, District 7",
+        "notes": "All items in good condition"
+      },
+      {
+        "actor": "Co.op Mart",
+        "action": "Delivered to retail store",
+        "timestamp": "2026-03-11T08:00:00.000Z",
+        "location": "Co.op Mart, District 7, HCMC",
+        "notes": "Placed on shelf, ready for sale"
+      }
+    ],
+    "qrCode": "QR-1710067200-APPLE001",
+    "origin": "Dalat, Lam Dong, Vietnam",
+    "batchNumber": "BATCH-2026-03-APPLE-001",
+    "expiryDate": "2026-03-25T00:00:00.000Z",
+    "createdAt": "2026-03-10T06:00:00.000Z",
+    "updatedAt": "2026-03-11T08:00:00.000Z"
+  },
+  {
+    "productId": "PROD-2026-TOMATO-002",
+    "name": "Cherry Tomatoes",
+    "description": "Sweet and juicy cherry tomatoes perfectly grown in Dalat's ideal climate",
+    "category": "Vegetables",
+    "producer": {
+      "name": "Dalat Fresh Farm",
+      "address": "0x7fD311e28443fdF8A2027E81713Be04386081DAc"
+    },
+    "ipfsHash": "QmTomato123456789AbCdEfGhIjKlMnOpQrStUvWxYz",
+    "ipfsUrl": "https://ipfs.io/ipfs/QmTomato123456789AbCdEfGhIjKlMnOpQrStUvWxYz",
+    "transactionHash": "0xb67b525f23b78cd57gd9cc995418bce4966f1f39986fc7b81145fdef87c229dc",
+    "blockchainAddress": "0xFf7148Ccaa4DAbc26e508823ec2CfB729f957c6b",
+    "status": "InTransit",
+    "history": [
+      {
+        "actor": "Nguyen Van A",
+        "action": "Harvested",
+        "timestamp": "2026-03-11T05:00:00.000Z",
+        "location": "Dalat Farm, Lam Dong",
+        "notes": "300kg batch, premium quality"
+      },
+      {
+        "actor": "Quality Control Team",
+        "action": "Quality inspection passed",
+        "timestamp": "2026-03-11T07:00:00.000Z",
+        "location": "Dalat Farm Processing Center",
+        "notes": "No pesticides detected"
+      },
+      {
+        "actor": "Tran Van B (Driver)",
+        "action": "In transit to HCMC",
+        "timestamp": "2026-03-11T09:00:00.000Z",
+        "location": "Highway 20, approaching HCMC",
+        "notes": "ETA: 17:00, temp maintained at 5°C"
+      }
+    ],
+    "qrCode": "QR-1710144000-TOMATO002",
+    "origin": "Dalat, Lam Dong, Vietnam",
+    "batchNumber": "BATCH-2026-03-TOMATO-002",
+    "expiryDate": "2026-03-18T00:00:00.000Z",
+    "createdAt": "2026-03-11T05:00:00.000Z",
+    "updatedAt": "2026-03-11T09:00:00.000Z"
+  },
+  {
+    "productId": "PROD-2026-LETTUCE-003",
+    "name": "Organic Green Lettuce",
+    "description": "Crisp and fresh organic lettuce, perfect for salads",
+    "category": "Vegetables",
+    "producer": {
+      "name": "Dalat Fresh Farm",
+      "address": "0x7fD311e28443fdF8A2027E81713Be04386081DAc"
+    },
+    "ipfsHash": "QmLettuce987654321ZyXwVuTsRqPoNmLkJiHgFeDcBa",
+    "ipfsUrl": "https://ipfs.io/ipfs/QmLettuce987654321ZyXwVuTsRqPoNmLkJiHgFeDcBa",
+    "transactionHash": "0xc78c636g34c89de68he0dd106529cdf5077g2g40097gd8c92256gfeg98d330ed",
+    "blockchainAddress": "0xFf7148Ccaa4DAbc26e508823ec2CfB729f957c6b",
+    "status": "Produced",
+    "history": [
+      {
+        "actor": "Farm Worker Team",
+        "action": "Harvested",
+        "timestamp": "2026-03-12T04:00:00.000Z",
+        "location": "Dalat Farm Greenhouse",
+        "notes": "200kg batch, hydroponically grown"
+      },
+      {
+        "actor": "Quality Control",
+        "action": "Quality check completed",
+        "timestamp": "2026-03-12T06:00:00.000Z",
+        "location": "Dalat Farm Processing Center",
+        "notes": "Ready for packaging and shipment"
+      }
+    ],
+    "qrCode": "QR-1710219600-LETTUCE003",
+    "origin": "Dalat, Lam Dong, Vietnam",
+    "batchNumber": "BATCH-2026-03-LETTUCE-003",
+    "expiryDate": "2026-03-17T00:00:00.000Z",
+    "createdAt": "2026-03-12T04:00:00.000Z",
+    "updatedAt": "2026-03-12T06:00:00.000Z"
+  }
+]

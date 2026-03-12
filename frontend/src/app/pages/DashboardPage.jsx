@@ -1,15 +1,44 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { storageService } from '../services/storage';
-import { Package, Truck, Store, Users, TrendingUp, CheckCircle } from 'lucide-react';
+import { productAPI, authAPI, blockchainAPI } from '../services/apiService';
+import { Package, Truck, Store, Users, TrendingUp, CheckCircle, Plus, Eye } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const products = storageService.getProducts();
-  const users = storageService.getUsers();
-  const supplyChainSteps = storageService.getSupplyChainSteps();
-  const blockchainTxs = storageService.getBlockchainTransactions();
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch products
+      const productsRes = await productAPI.getAllProducts();
+      if (productsRes.success) {
+        setProducts(productsRes.data);
+      }
+
+      // Fetch users (only for admin)
+      if (user?.role === 'ADMIN') {
+        const usersRes = await authAPI.getAllUsers();
+        if (usersRes.success) {
+          setUsers(usersRes.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Mock chart data
   const monthlyData = [
@@ -22,11 +51,52 @@ export default function DashboardPage() {
   ];
 
   const roleStats = [
-    { role: 'Nhà SX', count: users.filter(u => u.role === 'producer').length },
-    { role: 'Vận chuyển', count: users.filter(u => u.role === 'transporter').length },
-    { role: 'Cửa hàng', count: users.filter(u => u.role === 'store').length },
-    { role: 'Tiêu dùng', count: users.filter(u => u.role === 'consumer').length },
+    { role: 'Nhà SX', count: users.filter(u => u.role === 'MANUFACTURER').length },
+    { role: 'Vận chuyển', count: users.filter(u => u.role === 'TRANSPORTER').length },
+    { role: 'Cửa hàng', count: users.filter(u => u.role === 'STORE').length },
+    { role: 'Tiêu dùng', count: users.filter(u => u.role === 'CONSUMER').length },
   ];
+
+  const getQuickAction = () => {
+    switch (user?.role) {
+      case 'MANUFACTURER':
+        return {
+          text: 'Tạo sản phẩm mới và ghi nhận lên blockchain',
+          buttonText: 'Tạo sản phẩm',
+          onClick: () => navigate('/create-product')
+        };
+      case 'TRANSPORTER':
+        return {
+          text: 'Cập nhật trạng thái vận chuyển cho sản phẩm',
+          buttonText: 'Quản lý vận chuyển',
+          onClick: () => navigate('/transport')
+        };
+      case 'STORE':
+        return {
+          text: 'Quản lý sản phẩm và cập nhật trạng thái bán lẻ',
+          buttonText: 'Xem sản phẩm',
+          onClick: () => navigate('/store-products')
+        };
+      case 'CONSUMER':
+        return {
+          text: 'Quét mã QR để truy xuất nguồn gốc sản phẩm',
+          buttonText: 'Quét QR',
+          onClick: () => navigate('/scan')
+        };
+      case 'ADMIN':
+        return {
+          text: 'Quản lý toàn bộ hệ thống và theo dõi blockchain',
+          buttonText: 'Quản lý người dùng',
+          onClick: () => navigate('/users')
+        };
+      default:
+        return {
+          text: 'Khám phá hệ thống truy xuất nguồn gốc thực phẩm',
+          buttonText: 'Tìm hiểu thêm',
+          onClick: () => {}
+        };
+    }
+  };
 
   const StatCard = ({ icon: Icon, label, value, color }) => (
     <div className="bg-white rounded-xl shadow p-6">
@@ -42,10 +112,25 @@ export default function DashboardPage() {
     </div>
   );
 
+  const quickAction = getQuickAction();
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl mb-2">Chào mừng, {user?.name}! 👋</h1>
+        <h1 className="text-3xl mb-2">Chào mừng, {user?.username || user?.name}! 👋</h1>
         <p className="text-gray-600">Tổng quan hệ thống truy xuất nguồn gốc thực phẩm</p>
       </div>
 
@@ -60,19 +145,19 @@ export default function DashboardPage() {
         <StatCard
           icon={Users}
           label="Người dùng"
-          value={users.length}
+          value={user?.role === 'ADMIN' ? users.length : '-'}
           color="bg-green-500"
         />
         <StatCard
           icon={Truck}
-          label="Bước chuỗi cung ứng"
-          value={supplyChainSteps.length}
+          label="Sản phẩm đang vận chuyển"
+          value={products.filter(p => p.status === 'InTransit').length}
           color="bg-orange-500"
         />
         <StatCard
           icon={CheckCircle}
-          label="Blockchain TXs"
-          value={blockchainTxs.length}
+          label="Sản phẩm đã giao"
+          value={products.filter(p => p.status === 'Delivered').length}
           color="bg-purple-500"
         />
       </div>
@@ -122,8 +207,9 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {products.slice(0, 5).map((product) => (
                 <div
-                  key={product.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  key={product._id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/products`)}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -131,15 +217,23 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <h4 className="font-medium">{product.name}</h4>
-                      <p className="text-sm text-gray-600">{product.producerName}</p>
+                      <p className="text-sm text-gray-600">{product.producer?.name || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm inline-block">
-                      {product.currentStatus}
+                    <div className={`px-3 py-1 rounded-full text-sm inline-block ${
+                      product.status === 'Produced' ? 'bg-blue-100 text-blue-700' :
+                      product.status === 'InTransit' ? 'bg-orange-100 text-orange-700' :
+                      product.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {product.status === 'Produced' ? 'Đã sản xuất' :
+                       product.status === 'InTransit' ? 'Đang vận chuyển' :
+                       product.status === 'Delivered' ? 'Đã giao' :
+                       product.status}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(product.productionDate).toLocaleDateString('vi-VN')}
+                      {new Date(product.createdAt).toLocaleDateString('vi-VN')}
                     </p>
                   </div>
                 </div>
@@ -153,16 +247,23 @@ export default function DashboardPage() {
       <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-xl shadow p-6 text-white">
         <h3 className="text-xl mb-2">Bắt đầu ngay!</h3>
         <p className="mb-4 opacity-90">
-          {user?.role === 'producer' && 'Tạo sản phẩm mới và ghi nhận lên blockchain'}
-          {user?.role === 'transporter' && 'Cập nhật trạng thái vận chuyển cho sản phẩm'}
-          {user?.role === 'store' && 'Quản lý sản phẩm và cập nhật trạng thái bán lẻ'}
-          {user?.role === 'consumer' && 'Quét mã QR để truy xuất nguồn gốc sản phẩm'}
-          {user?.role === 'admin' && 'Quản lý toàn bộ hệ thống và theo dõi blockchain'}
+          {quickAction.text}
         </p>
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-gray-100 transition-colors">
-            Tìm hiểu thêm
+          <button 
+            onClick={quickAction.onClick}
+            className="px-6 py-2 bg-white text-green-600 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+          >
+            {quickAction.buttonText}
           </button>
+          {products.length > 0 && (
+            <button 
+              onClick={() => navigate('/products')}
+              className="px-6 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+            >
+              Xem tất cả sản phẩm
+            </button>
+          )}
         </div>
       </div>
     </div>

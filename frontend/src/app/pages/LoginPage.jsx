@@ -20,12 +20,12 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    const success = await login(email, password);
+    const result = await login(email, password);
 
-    if (success) {
+    if (result.success) {
       navigate('/dashboard');
     } else {
-      setError('Email hoặc mật khẩu không chính xác');
+      setError(result.message || 'Email hoặc mật khẩu không chính xác');
     }
   };
 
@@ -38,23 +38,23 @@ export default function LoginPage() {
       return;
     }
 
-    const success = await register({
+    const result = await register({
+      username: name,
       email,
-      name,
-      role,
-      phone,
-      address,
+      password,
+      role: role.toUpperCase(),
+      company: address || undefined,
     });
 
-    if (success) {
+    if (result.success) {
       navigate('/dashboard');
     } else {
-      setError('Email đã tồn tại trong hệ thống');
+      setError(result.message || 'Email đã tồn tại trong hệ thống');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 to-blue-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-4">
@@ -174,20 +174,6 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm mb-2 text-gray-700">Vai trò *</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                required
-              >
-                <option value="consumer">Người tiêu dùng</option>
-                <option value="producer">Nhà sản xuất</option>
-                <option value="transporter">Nhà vận chuyển</option>
-                <option value="store">Cửa hàng</option>
-              </select>
-            </div>
-            <div>
               <label className="block text-sm mb-2 text-gray-700">Số điện thoại</label>
               <input
                 type="tel"
@@ -207,6 +193,14 @@ export default function LoginPage() {
                 placeholder="Địa chỉ của bạn"
               />
             </div>
+            
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                ℹ️ Tài khoản mới sẽ có vai trò <strong>Người tiêu dùng</strong> mặc định. 
+                Liên hệ quản trị viên để thay đổi vai trò.
+              </p>
+            </div>
+
             <button
               type="submit"
               className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition-colors"

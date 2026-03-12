@@ -6,7 +6,15 @@ import { toast } from 'sonner';
 export default function UsersManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUser, setShowAddUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
+    email: '',
+    name: '',
+    role: 'consumer',
+    phone: '',
+    address: '',
+  });
+  const [editFormData, setEditFormData] = useState({
     email: '',
     name: '',
     role: 'consumer',
@@ -47,6 +55,30 @@ export default function UsersManagementPage() {
       storageService.deleteUser(userId);
       toast.success('Đã xóa người dùng');
     }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user.id);
+    setEditFormData({
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      phone: user.phone || '',
+      address: user.address || '',
+    });
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    storageService.updateUser(editingUser, editFormData);
+    toast.success('Cập nhật thông tin thành công!');
+    setEditingUser(null);
+    setEditFormData({ email: '', name: '', role: 'consumer', phone: '', address: '' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setEditFormData({ email: '', name: '', role: 'consumer', phone: '', address: '' });
   };
 
   const roleLabels = {
@@ -171,6 +203,85 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
+      {/* Edit User Form */}
+      {editingUser && (
+        <div className="bg-white rounded-xl shadow p-6 mb-6 border-2 border-blue-500">
+          <h3 className="text-lg mb-4 flex items-center gap-2">
+            <Edit className="w-5 h-5 text-blue-600" />
+            Chỉnh sửa người dùng
+          </h3>
+          <form onSubmit={handleSaveEdit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-2">Email *</label>
+              <input
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">Tên *</label>
+              <input
+                type="text"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">Vai trò *</label>
+              <select
+                value={editFormData.role}
+                onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="consumer">Người tiêu dùng</option>
+                <option value="producer">Nhà sản xuất</option>
+                <option value="transporter">Nhà vận chuyển</option>
+                <option value="store">Cửa hàng</option>
+                <option value="admin">Quản trị viên</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm mb-2">Số điện thoại</label>
+              <input
+                type="tel"
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm mb-2">Địa chỉ</label>
+              <input
+                type="text"
+                value={editFormData.address}
+                onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="md:col-span-2 flex gap-3">
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="flex-1 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Users Table */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -225,13 +336,22 @@ export default function UsersManagementPage() {
                     {new Date(user.createdAt).toLocaleDateString('vi-VN')}
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleDeleteUser(user.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditUser(user)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
