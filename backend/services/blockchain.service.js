@@ -31,9 +31,9 @@ const registerProductOnChain = async (productData) => {
     
     // Call smart contract function to register product
     const tx = await contract.registerProduct(
-      productData.productId,
       productData.name,
-      productData.manufacturer
+      productData.origin,
+      productData.productId
     );
     
     // Wait for transaction confirmation
@@ -47,13 +47,13 @@ const registerProductOnChain = async (productData) => {
 };
 
 // Update product status on blockchain
-const updateProductStatusOnChain = async (productId, status) => {
+const updateProductStatusOnChain = async (productId, status, location) => {
   try {
     const contractAddress = process.env.CONTRACT_ADDRESS;
     const contract = getContract('FoodTraceability', contractAddress);
     
     // Call smart contract function to update status
-    const tx = await contract.updateProductStatus(productId, status);
+    const tx = await contract.updateProductStatus(productId, status, location);
     const receipt = await tx.wait();
     
     return receipt.hash;
@@ -86,7 +86,7 @@ const verifyProductOnChain = async (productId) => {
     const contract = getContractReadOnly('FoodTraceability', contractAddress);
     
     // Call smart contract function to verify product
-    const exists = await contract.productExists(productId);
+    const exists = await contract.verifyProduct(productId);
     
     if (!exists) {
       return {
@@ -135,9 +135,11 @@ const getAllBlockchainLogs = async () => {
     const contractAddress = process.env.CONTRACT_ADDRESS;
     const contract = getContractReadOnly('FoodTraceability', contractAddress);
     
-    // Get all events from the contract
-    const filter = contract.filters.ProductRegistered();
-    const events = await contract.queryFilter(filter);
+    const productRegisteredEvents = await contract.queryFilter(contract.filters.ProductRegistered());
+    const statusUpdatedEvents = await contract.queryFilter(contract.filters.ProductStatusUpdated());
+    const events = [...productRegisteredEvents, ...statusUpdatedEvents].sort(
+      (left, right) => left.blockNumber - right.blockNumber
+    );
     
     return events.map(event => ({
       blockNumber: event.blockNumber,

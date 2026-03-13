@@ -54,7 +54,11 @@ export default function ProductsManagementPage() {
     try {
       const productData = {
         ...formData,
-        producer: user._id,
+        producer: {
+          name: user?.username || user?.email || 'Admin',
+          address: user?.walletAddress || user?._id || 'unknown-address',
+          userId: user?._id,
+        },
       };
       
       const response = await productAPI.createProduct(productData);
@@ -109,7 +113,7 @@ export default function ProductsManagementPage() {
   };
 
   const handleEditClick = (product) => {
-    setEditingProduct(product._id);
+    setEditingProduct(product.productId);
     setFormData({
       name: product.name,
       origin: product.origin || '',
@@ -391,9 +395,9 @@ export default function ProductsManagementPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredProducts.map((product) => (
-                editingProduct === product._id ? (
+                editingProduct === product.productId ? (
                   // Edit Form Row
-                  <tr key={product._id} className="bg-blue-50">
+                  <tr key={product.productId} className="bg-blue-50">
                     <td colSpan="5" className="px-6 py-4">
                       <form onSubmit={handleUpdateProduct} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -468,7 +472,7 @@ export default function ProductsManagementPage() {
                   </tr>
                 ) : (
                   // Normal Row
-                  <tr key={product._id} className="hover:bg-gray-50">
+                  <tr key={product.productId} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -495,7 +499,7 @@ export default function ProductsManagementPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => setSelectedProduct(
-                            selectedProduct?._id === product._id ? null : product
+                            selectedProduct?.productId === product.productId ? null : product
                           )}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Xem chi tiết"
@@ -510,7 +514,7 @@ export default function ProductsManagementPage() {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteProduct(product._id)}
+                          onClick={() => handleDeleteProduct(product.productId)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Xóa"
                         >

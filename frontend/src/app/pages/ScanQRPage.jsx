@@ -111,14 +111,14 @@ export default function ScanQRPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 lg:px-6">
       <div className="mb-6">
         <h1 className="text-3xl mb-2">Truy xuất nguồn gốc</h1>
-        <p className="text-gray-600">Quét mã QR hoặc nhập mã để xem thông tin sản phẩm</p>
+        <p className="text-gray-600 max-w-2xl">Quét mã QR hoặc nhập mã để xem thông tin sản phẩm</p>
       </div>
 
       {/* Mode Switcher */}
-      <div className="flex gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <button
           onClick={() => scanMode !== 'camera' && handleSwitchMode()}
           className={`flex-1 px-6 py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-3 ${
@@ -145,7 +145,7 @@ export default function ScanQRPage() {
 
       {/* Camera Scanner Mode */}
       {scanMode === 'camera' && (
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 mb-6">
           <div className="mb-4 p-4 bg-blue-50 rounded-lg flex items-start gap-3">
             <Camera className="w-5 h-5 text-blue-600 mt-0.5" />
             <div className="flex-1">
@@ -161,15 +161,15 @@ export default function ScanQRPage() {
           <div 
             id="qr-reader" 
             ref={scannerRef}
-            className="rounded-lg overflow-hidden"
+            className="rounded-lg overflow-hidden max-w-2xl mx-auto"
           ></div>
         </div>
       )}
 
       {/* Manual Input Mode */}
       {scanMode === 'manual' && (
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
-          <div className="flex gap-3">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <Scan className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -183,7 +183,7 @@ export default function ScanQRPage() {
             </div>
             <button
               onClick={handleManualSearch}
-              className="px-8 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+              className="px-8 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2 sm:w-auto"
             >
               <Search className="w-5 h-5" />
               Tra cứu
@@ -228,7 +228,7 @@ export default function ScanQRPage() {
           {/* Product Info */}
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-2xl mb-2">{searchResult.name}</h2>
                   <div className="flex items-center gap-2">

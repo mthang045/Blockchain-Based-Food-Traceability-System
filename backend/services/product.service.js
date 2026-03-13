@@ -1,26 +1,140 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product.model');
 const blockchainService = require('./blockchain.service');
-const blockchainServiceV6 = require('./blockchainService');
+
+const STATUS_MAP = {
+  PENDING: 'Pending',
+  PRODUCED: 'Produced',
+  MANUFACTURED: 'Produced',
+  INTRANSIT: 'InTransit',
+  IN_TRANSIT: 'InTransit',
+  DELIVERED: 'Delivered',
+  INSTORE: 'InStore',
+  IN_STORE: 'InStore',
+  SOLD: 'Sold'
+};
+
+const normalizeStatus = (status = 'Pending') => {
+  if (!status) {
+    return 'Pending';
+  }
+
+  const lookupKey = String(status)
+    .trim()
+    .replace(/[-\s]+/g, '_')
+    .toUpperCase();
+
+  return STATUS_MAP[lookupKey] || status;
+};
+
+const extractStatusFromHistory = (action, fallback) => {
+  const match = action?.match(/Status changed to (.+)$/);
+  return match?.[1] || fallback || 'Pending';
+};
+
+const serializeHistory = (history = []) => {
+  return history.map((entry, index) => ({
+    id: entry._id?.toString() || `${index}`,
+    status: extractStatusFromHistory(entry.action, 'Pending'),
+    stepName: extractStatusFromHistory(entry.action, 'Pending'),
+    location: entry.location,
+    timestamp: entry.timestamp,
+    performedBy: entry.actor,
+    notes: entry.notes || ''
+  }));
+};
+
+const serializeProduct = (productDocument) => {
+  if (!productDocument) {
+    return null;
+  }
+
+  const product = productDocument.toObject ? productDocument.toObject() : productDocument;
+
+  return {
+    ...product,
+    id: product.productId,
+    currentStatus: product.status,
+    manufacturer: product.producer?.name,
+    manufacturerAddress: product.producer?.address,
+    blockchainTxHash: product.transactionHash,
+    history: serializeHistory(product.history)
+  };
+};
+
+const buildProducer = (productData, user) => {
+  const producerName =
+    productData.producer?.name ||
+    productData.manufacturer ||
+    user?.username ||
+    user?.email ||
+    'Unknown producer';
+
+  const producerAddress =
+    productData.producer?.address ||
+    productData.manufacturerAddress ||
+    user?.walletAddress ||
+    user?._id?.toString() ||
+    'unknown-address';
+
+  return {
+    name: producerName,
+    address: producerAddress,
+    userId: productData.producer?.userId || user?._id?.toString()
+  };
+};
+
+const createHistoryEntry = ({ actor, status, location, notes = '' }) => ({
+  actor,
+  action: `Status changed to ${status}`,
+  timestamp: new Date(),
+  location,
+  notes
+});
+
+const generateProductId = () => `PROD-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
 
 // Create a new product
-const createProduct = async (productData) => {
+const createProduct = async (productData, user) => {
   try {
-    // Create product in database
-    const product = new Product(productData);
-    await product.save();
-    
-    // Register product on blockchain
-    const txHash = await blockchainService.registerProductOnChain({
-      productId: product.productId,
-      name: product.name,
-      manufacturer: product.manufacturer
+    const status = normalizeStatus(productData.status || productData.currentStatus || 'Produced');
+    const productId = productData.productId || generateProductId();
+    const producer = buildProducer(productData, user);
+    const origin = productData.origin || productData.productionPlace || 'Unknown origin';
+
+    const product = new Product({
+      productId,
+      name: productData.name,
+      description: productData.description || '',
+      category: productData.category || 'FOOD',
+      producer,
+      origin,
+      expiryDate: productData.expiryDate || undefined,
+      qrCode: productData.qrCode || `FOODCHAIN-${productId}`,
+      status,
+      history: [
+        createHistoryEntry({
+          actor: producer.name,
+          status,
+          location: origin,
+          notes: productData.description || 'Product created'
+        })
+      ]
     });
-    
-    // Update product with blockchain transaction hash
-    product.blockchainTxHash = txHash;
+
+    try {
+      const txHash = await blockchainService.registerProductOnChain({
+        productId: product.productId,
+        name: product.name,
+        origin: product.origin
+      });
+      product.transactionHash = txHash;
+    } catch (blockchainError) {
+      console.warn('Blockchain registration skipped:', blockchainError.message);
+    }
+
     await product.save();
-    
-    return product;
+    return serializeProduct(product);
   } catch (error) {
     console.error('Error in createProduct service:', error);
     throw error;
@@ -30,7 +144,8 @@ const createProduct = async (productData) => {
 // Get all products
 const getAllProducts = async () => {
   try {
-    return await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find().sort({ createdAt: -1 });
+    return products.map(serializeProduct);
   } catch (error) {
     console.error('Error in getAllProducts service:', error);
     throw error;
@@ -40,7 +155,13 @@ const getAllProducts = async () => {
 // Get product by ID
 const getProductById = async (productId) => {
   try {
-    return await Product.findOne({ productId });
+    let product = await Product.findOne({ productId });
+
+    if (!product && mongoose.Types.ObjectId.isValid(productId)) {
+      product = await Product.findById(productId);
+    }
+
+    return serializeProduct(product);
   } catch (error) {
     console.error('Error in getProductById service:', error);
     throw error;
@@ -48,33 +169,57 @@ const getProductById = async (productId) => {
 };
 
 // Update product status
-const updateProductStatus = async (productId, status) => {
+const updateProductStatus = async (productId, status, metadata = {}, user) => {
   try {
     const product = await Product.findOne({ productId });
-    
+
     if (!product) {
       throw new Error('Product not found');
     }
-    
-    // Update status on blockchain
-    const txHash = await blockchainService.updateProductStatusOnChain(productId, status);
-    
-    // Update product in database
-    product.currentStatus = status;
-    product.blockchainTxHash = txHash;
+
+    const normalizedStatus = normalizeStatus(status);
+    const actor = metadata.actor || user?.username || user?.email || 'System';
+    const location = metadata.location || product.origin || 'Unknown location';
+
+    product.status = normalizedStatus;
+    product.history.push(
+      createHistoryEntry({
+        actor,
+        status: normalizedStatus,
+        location,
+        notes: metadata.notes || ''
+      })
+    );
+
+    try {
+      const txHash = await blockchainService.updateProductStatusOnChain(
+        product.productId,
+        normalizedStatus,
+        location
+      );
+      product.transactionHash = txHash;
+    } catch (blockchainError) {
+      console.warn('Blockchain status update skipped:', blockchainError.message);
+    }
+
     await product.save();
-    
-    return product;
+    return serializeProduct(product);
   } catch (error) {
     console.error('Error in updateProductStatus service:', error);
     throw error;
   }
 };
 
-// Get product history from blockchain
+// Get product history
 const getProductHistory = async (productId) => {
   try {
-    return await blockchainService.getProductHistoryFromChain(productId);
+    const product = await Product.findOne({ productId });
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    return serializeHistory(product.history);
   } catch (error) {
     console.error('Error in getProductHistory service:', error);
     throw error;
@@ -91,103 +236,49 @@ const getProductTraceability = async (productId) => {
   try {
     console.log(`🔍 Getting traceability for product: ${productId}`);
 
-    // Step 1: Check local MongoDB database for cached product info
     let product = await Product.findOne({ productId });
-    
+
+    if (!product) {
+      product = await Product.findOne({ qrCode: productId });
+    }
+
+    if (!product) {
+      return {
+        success: false,
+        message: 'Product not found',
+        productId,
+        verified: false
+      };
+    }
+
     let blockchainVerified = false;
     let blockchainHistory = null;
 
-    // Step 2: If product exists in DB, try to get blockchain history
-    if (product) {
-      console.log('✅ Product found in database');
-      
-      // Try to get full history from blockchain if blockchainService is initialized
-      try {
-        if (blockchainServiceV6.initialized) {
-          const historyResult = await blockchainServiceV6.getProductHistory(productId);
-          if (historyResult.success) {
-            blockchainHistory = historyResult.history;
-            blockchainVerified = true;
-            console.log(`✅ Retrieved ${historyResult.historyCount} blockchain history entries`);
-          }
-        }
-      } catch (blockchainError) {
-        console.warn('⚠️  Could not retrieve blockchain history:', blockchainError.error || blockchainError.message);
-        // Continue with database info only
-      }
-    } else {
-      // Step 3: If not in database, check blockchain directly
-      console.log('⚠️  Product not found in database, checking blockchain...');
-      
-      try {
-        if (blockchainServiceV6.initialized) {
-          // Verify product exists on blockchain
-          const verificationResult = await blockchainServiceV6.verifyProduct(productId);
-          
-          if (!verificationResult.verified) {
-            return {
-              success: false,
-              message: 'Product not found in database or blockchain',
-              productId: productId,
-              verified: false
-            };
-          }
+    try {
+      const verificationResult = await blockchainService.verifyProductOnChain(product.productId);
+      blockchainVerified = Boolean(verificationResult?.verified);
 
-          // Get blockchain history
-          const historyResult = await blockchainServiceV6.getProductHistory(productId);
-          if (historyResult.success) {
-            blockchainHistory = historyResult.history;
-            blockchainVerified = true;
-            
-            // Create minimal product object from blockchain data
-            product = {
-              productId: productId,
-              name: verificationResult.productData.name,
-              origin: verificationResult.productData.origin,
-              manufacturer: verificationResult.productData.manufacturer,
-              currentStatus: blockchainHistory[blockchainHistory.length - 1]?.status || 'UNKNOWN',
-              createdAt: verificationResult.productData.registeredDate
-            };
-          }
-        } else {
-          throw new Error('Blockchain service not initialized');
-        }
-      } catch (blockchainError) {
-        console.error('❌ Blockchain lookup failed:', blockchainError);
-        return {
-          success: false,
-          message: 'Product not found and blockchain service unavailable',
-          productId: productId,
-          error: blockchainError.error || blockchainError.message
-        };
+      if (blockchainVerified) {
+        const historyResult = await blockchainService.getProductHistoryFromChain(product.productId);
+        blockchainHistory = Array.isArray(historyResult)
+          ? historyResult
+          : historyResult?.history || null;
       }
+    } catch (blockchainError) {
+      console.warn('Blockchain verification skipped:', blockchainError.message);
     }
 
-    // Step 4: Format the journey based on blockchain history or status
+    const serializedProduct = serializeProduct(product);
     const journey = formatProductJourney(product, blockchainHistory);
 
-    // Step 5: Return formatted response
     return {
       success: true,
       message: 'Product traceability retrieved successfully',
       verified: blockchainVerified,
       dataSource: blockchainVerified ? 'blockchain' : 'database',
-      product: {
-        productId: product.productId,
-        name: product.name,
-        description: product.description || 'N/A',
-        category: product.category || 'N/A',
-        origin: product.origin,
-        manufacturer: product.manufacturer,
-        manufacturerAddress: product.manufacturerAddress,
-        currentStatus: product.currentStatus,
-        qrCode: product.qrCode,
-        blockchainTxHash: product.blockchainTxHash,
-        registeredDate: product.createdAt,
-        lastUpdated: product.updatedAt
-      },
-      journey: journey,
-      blockchainHistory: blockchainHistory,
+      product: serializedProduct,
+      journey,
+      blockchainHistory,
       timestamp: new Date().toISOString()
     };
 
@@ -207,31 +298,47 @@ const getProductTraceability = async (productId) => {
 const formatProductJourney = (product, blockchainHistory) => {
   const journey = [];
 
-  // If we have blockchain history, use it
-  if (blockchainHistory && blockchainHistory.length > 0) {
+  if (Array.isArray(blockchainHistory) && blockchainHistory.length > 0) {
     blockchainHistory.forEach((entry, index) => {
-      const stage = mapStatusToStage(entry.status);
+      const status = normalizeStatus(entry.status);
+      const stage = mapStatusToStage(status);
       journey.push({
         step: index + 1,
         stage: stage,
-        status: entry.status,
+        status,
         location: entry.location,
         updatedBy: entry.updatedBy,
-        timestamp: entry.date,
-        description: getStageDescription(stage, entry.status)
+        timestamp: entry.date || entry.timestamp,
+        description: getStageDescription(stage, status)
       });
     });
   } else {
-    // Fallback to current status if no blockchain history
-    const currentStage = mapStatusToStage(product.currentStatus);
-    journey.push({
-      step: 1,
-      stage: currentStage,
-      status: product.currentStatus,
-      location: product.origin || 'Unknown',
-      timestamp: product.createdAt,
-      description: getStageDescription(currentStage, product.currentStatus)
-    });
+    const history = serializeHistory(product.history);
+
+    if (history.length > 0) {
+      history.forEach((entry, index) => {
+        const stage = mapStatusToStage(entry.status);
+        journey.push({
+          step: index + 1,
+          stage,
+          status: entry.status,
+          location: entry.location,
+          updatedBy: entry.performedBy,
+          timestamp: entry.timestamp,
+          description: getStageDescription(stage, entry.status)
+        });
+      });
+    } else {
+      const currentStage = mapStatusToStage(product.status);
+      journey.push({
+        step: 1,
+        stage: currentStage,
+        status: product.status,
+        location: product.origin || 'Unknown',
+        timestamp: product.createdAt,
+        description: getStageDescription(currentStage, product.status)
+      });
+    }
   }
 
   return journey;
@@ -244,10 +351,11 @@ const formatProductJourney = (product, blockchainHistory) => {
  */
 const mapStatusToStage = (status) => {
   const statusMap = {
-    'MANUFACTURED': 'Producer',
-    'IN_TRANSIT': 'Distributor',
-    'IN_STORE': 'Retailer',
-    'SOLD': 'Consumer'
+    Produced: 'Producer',
+    InTransit: 'Distributor',
+    Delivered: 'Retailer',
+    InStore: 'Retailer',
+    Sold: 'Consumer'
   };
   return statusMap[status] || 'Unknown';
 };
@@ -274,15 +382,49 @@ const getStageDescription = (stage, status) => {
  * @param {Object} updateData - Data to update
  * @returns {Promise<Object>} Updated product
  */
-const updateProduct = async (productId, updateData) => {
+const updateProduct = async (productId, updateData, user) => {
   try {
-    const product = await Product.findByIdAndUpdate(
-      productId,
-      { ...updateData, updatedAt: new Date() },
-      { new: true, runValidators: true }
-    ).populate('producer', 'username email company');
-    
-    return product;
+    const product = await Product.findOne({ productId });
+
+    if (!product) {
+      return null;
+    }
+
+    if (updateData.name !== undefined) {
+      product.name = updateData.name;
+    }
+    if (updateData.origin !== undefined) {
+      product.origin = updateData.origin;
+    }
+    if (updateData.description !== undefined) {
+      product.description = updateData.description;
+    }
+    if (updateData.category !== undefined) {
+      product.category = updateData.category;
+    }
+    if (updateData.expiryDate !== undefined) {
+      product.expiryDate = updateData.expiryDate || undefined;
+    }
+    if (updateData.qrCode !== undefined) {
+      product.qrCode = updateData.qrCode;
+    }
+    if (updateData.status !== undefined) {
+      product.status = normalizeStatus(updateData.status);
+    }
+
+    if (updateData.status || updateData.location || updateData.notes) {
+      product.history.push(
+        createHistoryEntry({
+          actor: user?.username || user?.email || 'System',
+          status: product.status,
+          location: updateData.location || product.origin || 'Unknown location',
+          notes: updateData.notes || 'Product updated'
+        })
+      );
+    }
+
+    await product.save();
+    return serializeProduct(product);
   } catch (error) {
     console.error('Error updating product:', error);
     throw error;
@@ -296,8 +438,8 @@ const updateProduct = async (productId, updateData) => {
  */
 const deleteProduct = async (productId) => {
   try {
-    const product = await Product.findByIdAndDelete(productId);
-    return product;
+    const product = await Product.findOneAndDelete({ productId });
+    return serializeProduct(product);
   } catch (error) {
     console.error('Error deleting product:', error);
     throw error;
@@ -311,11 +453,8 @@ const deleteProduct = async (productId) => {
  */
 const getProductByQRCode = async (qrCode) => {
   try {
-    const product = await Product.findOne({ qrCode })
-      .populate('producer', 'username email company walletAddress')
-      .populate('currentHolder', 'username email company');
-    
-    return product;
+    const product = await Product.findOne({ qrCode });
+    return serializeProduct(product);
   } catch (error) {
     console.error('Error fetching product by QR code:', error);
     throw error;

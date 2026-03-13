@@ -6,11 +6,9 @@ const { authenticate } = require('../middleware/auth.middleware');
 // Public routes
 router.get('/', productController.getAllProducts);
 router.get('/qr/:qrCode', productController.getProductByQRCode);
-router.get('/:productId', productController.getProductById);
 router.get('/:productId/history', productController.getProductHistory);
-
-// QR Code scanning endpoint - Public access for consumers
 router.get('/:productId/traceability', productController.getProductTraceability);
+router.get('/:productId', productController.getProductById);
 
 // Protected routes (require authentication)
 router.post('/', authenticate, productController.createProduct);

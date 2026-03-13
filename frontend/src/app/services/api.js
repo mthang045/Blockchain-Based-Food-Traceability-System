@@ -15,9 +15,15 @@ const apiClient = axios.create({
 // Request interceptor - Add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Support token persisted in either localStorage (remember) or sessionStorage (no-remember)
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token) {
+      // eslint-disable-next-line no-console
+      console.debug('apiClient: attaching token from', localStorage.getItem('token') ? 'localStorage' : 'sessionStorage', 'tokenLen=', token?.length);
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // eslint-disable-next-line no-console
+      console.debug('apiClient: no token found in storage');
     }
     return config;
   },
@@ -36,11 +42,12 @@ apiClient.interceptors.response.use(
       // Server responded with error status
       const message = error.response.data?.message || error.response.statusText;
       
-      // Handle 401 Unauthorized - logout user
+      // Handle 401 Unauthorized - clear stored credentials but do not force redirect
       if (error.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
       }
       
       return Promise.reject({

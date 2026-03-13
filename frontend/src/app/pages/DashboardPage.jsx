@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { productAPI, authAPI, blockchainAPI } from '../services/apiService';
+import { productAPI, authAPI } from '../services/apiService';
 import { Package, Truck, Store, Users, TrendingUp, CheckCircle, Plus, Eye } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
@@ -10,6 +10,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
+  const [range, setRange] = useState('6'); // months: '3','6','12'
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,22 +41,46 @@ export default function DashboardPage() {
     }
   };
 
-  // Mock chart data
-  const monthlyData = [
-    { name: 'T1', products: 12 },
-    { name: 'T2', products: 19 },
-    { name: 'T3', products: 15 },
-    { name: 'T4', products: 25 },
-    { name: 'T5', products: 22 },
-    { name: 'T6', products: 30 },
-  ];
+  const getMonthlyProductData = (monthsCount = 6) => {
+    const now = new Date();
+    const months = [];
+
+    for (let i = monthsCount - 1; i >= 0; i -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      const monthLabel = new Intl.DateTimeFormat('vi-VN', { month: 'short', year: 'numeric' }).format(date);
+      months.push({
+        key,
+        name: `T${date.getMonth() + 1}`,
+        label: monthLabel,
+        products: 0,
+      });
+    }
+
+    products.forEach((product) => {
+      if (!product?.createdAt) return;
+      const createdAt = new Date(product.createdAt);
+      const monthKey = `${createdAt.getFullYear()}-${createdAt.getMonth()}`;
+      const targetMonth = months.find((month) => month.key === monthKey);
+      if (targetMonth) targetMonth.products += 1;
+    });
+
+    return months.map(({ key, ...month }) => month);
+  };
+
+  const monthlyData = useMemo(() => getMonthlyProductData(Number(range)), [products, range]);
 
   const roleStats = [
+    { role: 'Admin', count: users.filter(u => u.role === 'ADMIN').length },
     { role: 'Nhà SX', count: users.filter(u => u.role === 'MANUFACTURER').length },
     { role: 'Vận chuyển', count: users.filter(u => u.role === 'TRANSPORTER').length },
     { role: 'Cửa hàng', count: users.filter(u => u.role === 'STORE').length },
     { role: 'Tiêu dùng', count: users.filter(u => u.role === 'CONSUMER').length },
   ];
+
+  const refreshData = async () => {
+    await fetchData();
+  };
 
   const getQuickAction = () => {
     switch (user?.role) {
@@ -162,7 +187,25 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Charts */}
+      {/* Controls + Charts */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-gray-600">Khoảng thời gian:</label>
+          <select
+            value={range}
+            onChange={(e) => setRange(e.target.value)}
+            className="px-3 py-2 border rounded-md"
+          >
+            <option value="3">3 tháng</option>
+            <option value="6">6 tháng</option>
+            <option value="12">12 tháng</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={refreshData} className="px-3 py-2 bg-white border rounded-md">Làm mới</button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow p-6">
           <h3 className="text-lg mb-4">Sản phẩm theo tháng</h3>
@@ -171,7 +214,13 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip />
+              <Tooltip
+                labelFormatter={(label, payload) => {
+                  const item = monthlyData.find(m => m.name === label);
+                  return item?.label || label;
+                }}
+                formatter={(value, name) => [value, 'Số sản phẩm']}
+              />
               <Line type="monotone" dataKey="products" stroke="#22c55e" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
@@ -184,7 +233,7 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="role" />
               <YAxis />
-              <Tooltip />
+              <Tooltip formatter={(value) => [value, 'Người dùng']} />
               <Bar dataKey="count" fill="#22c55e" />
             </BarChart>
           </ResponsiveContainer>

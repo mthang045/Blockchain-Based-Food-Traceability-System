@@ -21,6 +21,26 @@ export const authAPI = {
   getAllUsers: async () => {
     return await apiClient.get('/users');
   },
+
+  // Update current user profile
+  updateProfile: async (updates) => {
+    return await apiClient.put('/users/profile', updates);
+  },
+
+  // Create user (admin only)
+  createUser: async (userData) => {
+    return await apiClient.post('/users', userData);
+  },
+
+  // Update user (admin only)
+  updateUser: async (userId, userData) => {
+    return await apiClient.put(`/users/${userId}`, userData);
+  },
+
+  // Delete user (admin only)
+  deleteUser: async (userId) => {
+    return await apiClient.delete(`/users/${userId}`);
+  },
 };
 
 // Product API
@@ -51,8 +71,8 @@ export const productAPI = {
   },
 
   // Update product status
-  updateProductStatus: async (productId, status) => {
-    return await apiClient.put(`/products/${productId}/status`, { status });
+  updateProductStatus: async (productId, status, metadata = {}) => {
+    return await apiClient.put(`/products/${productId}/status`, { status, ...metadata });
   },
 
   // Delete product
@@ -63,6 +83,11 @@ export const productAPI = {
   // Get product history from blockchain
   getProductHistory: async (productId) => {
     return await apiClient.get(`/products/${productId}/history`);
+  },
+
+  // Get traceability payload for public QR scanning
+  getTraceability: async (productId) => {
+    return await apiClient.get(`/products/${productId}/traceability`);
   },
 };
 

@@ -4,7 +4,7 @@ const productService = require('../services/product.service');
 const createProduct = async (req, res) => {
   try {
     const productData = req.body;
-    const result = await productService.createProduct(productData);
+    const result = await productService.createProduct(productData, req.user);
     
     res.status(201).json({
       success: true,
@@ -69,9 +69,14 @@ const getProductById = async (req, res) => {
 const updateProductStatus = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { status } = req.body;
+    const { status, location, notes } = req.body;
     
-    const result = await productService.updateProductStatus(productId, status);
+    const result = await productService.updateProductStatus(
+      productId,
+      status,
+      { location, notes },
+      req.user
+    );
     
     res.status(200).json({
       success: true,
@@ -179,7 +184,7 @@ const updateProduct = async (req, res) => {
     const { productId } = req.params;
     const updateData = req.body;
     
-    const result = await productService.updateProduct(productId, updateData);
+    const result = await productService.updateProduct(productId, updateData, req.user);
     
     if (!result) {
       return res.status(404).json({

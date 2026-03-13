@@ -574,6 +574,18 @@ class BlockchainService {
         );
     }
     
+        ## 💡 Tài khoản demo
+
+        Để tiện thử nghiệm nhanh, các thông tin tài khoản demo được liệt kê dưới đây. Bạn có thể sử dụng email dưới đây và bất kỳ mật khẩu nào để đăng nhập (hoặc đăng ký lại nếu cần):
+
+        - Admin: admin@foodchain.vn
+        - Nhà sản xuất: producer@foodchain.vn
+        - Vận chuyển: transporter@foodchain.vn
+        - Cửa hàng: store@foodchain.vn
+        - Người tiêu dùng: consumer@foodchain.vn
+
+        Lưu ý: thông tin demo đã được chuyển từ giao diện đăng nhập vào README này.
+
     // Ghi sản phẩm lên blockchain
     async registerProduct(productData) {
         const accounts = await this.web3.eth.getAccounts();

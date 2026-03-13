@@ -1,6 +1,8 @@
 const User = require('../models/User.model');
 const jwt = require('jsonwebtoken');
 
+const normalizeRole = (role = 'CONSUMER') => String(role).toUpperCase();
+
 // Register new user
 const registerUser = async (userData) => {
   try {
@@ -14,7 +16,10 @@ const registerUser = async (userData) => {
     }
     
     // Create new user
-    const user = new User(userData);
+    const user = new User({
+      ...userData,
+      role: normalizeRole(userData.role)
+    });
     await user.save();
     
     // Generate JWT token
@@ -85,6 +90,70 @@ const getAllUsers = async () => {
   }
 };
 
+const updateProfile = async (userId, updates) => {
+  try {
+    const allowedUpdates = {
+      username: updates.username,
+      company: updates.company,
+      walletAddress: updates.walletAddress
+    };
+
+    Object.keys(allowedUpdates).forEach((key) => {
+      if (allowedUpdates[key] === undefined) {
+        delete allowedUpdates[key];
+      }
+    });
+
+    return await User.findByIdAndUpdate(userId, allowedUpdates, {
+      new: true,
+      runValidators: true
+    });
+  } catch (error) {
+    console.error('Error in updateProfile service:', error);
+    throw error;
+  }
+};
+
+const createUser = async (userData) => {
+  return registerUser(userData);
+};
+
+const updateUser = async (userId, updates) => {
+  try {
+    const allowedUpdates = {
+      username: updates.username,
+      email: updates.email,
+      role: updates.role ? normalizeRole(updates.role) : undefined,
+      company: updates.company,
+      walletAddress: updates.walletAddress,
+      isActive: updates.isActive
+    };
+
+    Object.keys(allowedUpdates).forEach((key) => {
+      if (allowedUpdates[key] === undefined) {
+        delete allowedUpdates[key];
+      }
+    });
+
+    return await User.findByIdAndUpdate(userId, allowedUpdates, {
+      new: true,
+      runValidators: true
+    });
+  } catch (error) {
+    console.error('Error in updateUser service:', error);
+    throw error;
+  }
+};
+
+const deleteUser = async (userId) => {
+  try {
+    return await User.findByIdAndDelete(userId);
+  } catch (error) {
+    console.error('Error in deleteUser service:', error);
+    throw error;
+  }
+};
+
 // Generate JWT token
 const generateToken = (user) => {
   const payload = {
@@ -104,5 +173,9 @@ module.exports = {
   loginUser,
   getUserById,
   getAllUsers,
+  updateProfile,
+  createUser,
+  updateUser,
+  deleteUser,
   generateToken
 };

@@ -1,31 +1,15 @@
-# Build stage
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM node:18-alpine
+
 WORKDIR /app
 
-# Copy pom.xml and download dependencies
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Copy source code and build
-COPY src ./src
-RUN mvn clean package -DskipTests
+COPY . .
 
-# Runtime stage
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
+EXPOSE 3000
 
-# Copy jar from build stage
-COPY --from=build /app/target/*.jar app.jar
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Create uploads directory
-RUN mkdir -p /app/uploads
-
-# Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
-
-# Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["node", "server.js"]

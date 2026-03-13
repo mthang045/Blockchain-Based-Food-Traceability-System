@@ -40,10 +40,9 @@ export default function CreateProductPage() {
         description: formData.description || `Sản xuất tại ${formData.productionPlace}`,
         category: 'FOOD',
         origin: formData.productionPlace,
-        manufacturer: user.username || user.email,
-        manufacturerAddress: user.walletAddress || user._id,
         qrCode: qrCode,
-        currentStatus: 'MANUFACTURED',
+        status: 'Produced',
+        expiryDate: formData.expiryDate,
       };
 
       // Send to backend API
@@ -103,12 +102,6 @@ export default function CreateProductPage() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Blockchain Hash:</span>
-              <span className="font-mono text-xs bg-white px-3 py-1 rounded truncate max-w-xs">
-                {createdProduct.blockchainHash}
-              </span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-gray-600">Mã sản phẩm:</span>
               <span className="font-mono text-sm bg-white px-3 py-1 rounded">
                 {createdProduct.productId}
@@ -137,7 +130,7 @@ export default function CreateProductPage() {
               }}
               className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
-              Tạo sản phẩmkhác
+              Tạo sản phẩm khác
             </button>
             <button
               onClick={() => navigate('/my-products')}

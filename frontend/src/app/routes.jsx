@@ -24,6 +24,16 @@ function ProtectedRoute({ children }) {
   return <DashboardLayout>{children}</DashboardLayout>;
 }
 
+function OptionalDashboardRoute({ children }) {
+  const { user } = useAuth();
+
+  if (!user) {
+    return children;
+  }
+
+  return <DashboardLayout>{children}</DashboardLayout>;
+}
+
 // Root component with AuthProvider
 function Root({ children }) {
   return <AuthProvider>{children}</AuthProvider>;
@@ -72,9 +82,9 @@ export const router = createBrowserRouter([
     path: '/scan',
     element: (
       <Root>
-        <ProtectedRoute>
+        <OptionalDashboardRoute>
           <ScanQRPage />
-        </ProtectedRoute>
+        </OptionalDashboardRoute>
       </Root>
     ),
   },

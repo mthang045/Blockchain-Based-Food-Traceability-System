@@ -21,7 +21,8 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true, trim: true },
   producer: {
     name: { type: String, required: true, trim: true },
-    address: { type: String, required: true, trim: true }
+    address: { type: String, required: true, trim: true },
+    userId: { type: String, trim: true }
   },
   ipfsHash: { type: String, trim: true },
   ipfsUrl: { type: String, trim: true },
@@ -30,7 +31,7 @@ const productSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: {
-      values: ['Pending', 'Produced', 'InTransit', 'Delivered'],
+      values: ['Pending', 'Produced', 'InTransit', 'Delivered', 'InStore', 'Sold'],
       message: '{VALUE} is not a valid status'
     },
     default: 'Pending',

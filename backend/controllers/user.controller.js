@@ -78,9 +78,98 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const updatedUser = await userService.updateProfile(req.user.id, req.body);
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const createUser = async (req, res) => {
+  try {
+    const result = await userService.createUser(req.body);
+
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      data: result.user
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const updatedUser = await userService.updateUser(req.params.userId, req.body);
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User updated successfully',
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const deletedUser = await userService.deleteUser(req.params.userId);
+
+    if (!deletedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
-  getAllUsers
+  getAllUsers,
+  updateProfile,
+  createUser,
+  updateUser,
+  deleteUser
 };

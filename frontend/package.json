@@ -7,7 +7,9 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "echo \"no lint configured\"",
+    "test": "echo \"No frontend tests configured yet\""
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

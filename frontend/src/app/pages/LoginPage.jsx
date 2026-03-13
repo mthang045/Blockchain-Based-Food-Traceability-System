@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [name, setName] = useState('');
   const [role, setRole] = useState('consumer');
   const [phone, setPhone] = useState('');
@@ -20,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    const result = await login(email, password);
+    const result = await login(email, password, remember);
 
     if (result.success) {
       navigate('/dashboard');
@@ -126,16 +127,16 @@ export default function LoginPage() {
               Đăng nhập
             </button>
 
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm mb-2">Tài khoản demo:</p>
-              <ul className="text-xs space-y-1 text-gray-700">
-                <li>Admin: admin@foodchain.vn</li>
-                <li>Nhà sản xuất: producer@foodchain.vn</li>
-                <li>Vận chuyển: transporter@foodchain.vn</li>
-                <li>Cửa hàng: store@foodchain.vn</li>
-                <li>Người tiêu dùng: consumer@foodchain.vn</li>
-                <li className="text-gray-500 italic">(Mật khẩu bất kỳ)</li>
-              </ul>
+            <div className="flex items-center justify-between mt-2">
+              <label className="inline-flex items-center text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="mr-2 h-4 w-4"
+                />
+                Ghi nhớ đăng nhập
+              </label>
             </div>
           </form>
         ) : (
