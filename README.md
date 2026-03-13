@@ -655,11 +655,7 @@ Mỗi giao dịch trên blockchain bao gồm:
 ## 👥 Nhóm Phát Triển
 
 **Nhóm 13 - Blockchain Food Traceability System**
-- Phạm Minh Tân - Team Lead & Backend Developer
-- Thành viên 2 - Frontend Developer
-- Thành viên 3 - Smart Contract Developer
-- Thành viên 4 - UI/UX Designer
-- Thành viên 5 - QA Tester
+- Bùi Minh Thắng
 
 ## 📝 Roadmap
 
@@ -732,8 +728,8 @@ Licensed under the MIT License.
 
 ## 🎓 Trường Đại Học
 
-Đại học [Tên trường] - Khoa Công nghệ Thông tin  
-Môn: Blockchain và Ứng dụng  
+Học Viện Hàng Không Việt Nam - Khoa Công nghệ Thông tin  
+Môn: Công Nghệ Chuỗi Khối  
 Năm học: 2025-2026
 
 ---
