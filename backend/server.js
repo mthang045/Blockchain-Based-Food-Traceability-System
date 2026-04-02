@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDatabase = require('./config/database.config');
 const { initializeBlockchain } = require('./services/initBlockchain');
+const { sanitizeForLog } = require('./utils/logSanitizer');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/blockchain', require('./routes/blockchainRoutes'));
+app.use('/api/ipfs', require('./routes/ipfsRoutes'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -28,7 +30,7 @@ app.get('/', (req, res) => {
 // Error handlers
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(sanitizeForLog(err));
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
@@ -63,7 +65,7 @@ const startServer = async () => {
     });
 
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
+    console.error('❌ Failed to start server:', sanitizeForLog(error));
     process.exit(1);
   }
 };

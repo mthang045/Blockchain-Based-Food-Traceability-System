@@ -1,4 +1,18 @@
-const { getProvider, getContract, getContractReadOnly } = require('../config/blockchain.config');
+const {
+  getProvider,
+  getContract,
+  getContractWithPrivateKey,
+  getContractReadOnly
+} = require('../config/blockchain.config');
+const { sanitizeForLog } = require('../utils/logSanitizer');
+
+const getWriteContract = (contractAddress, signerPrivateKey) => {
+  if (signerPrivateKey) {
+    return getContractWithPrivateKey('FoodTraceability', contractAddress, signerPrivateKey);
+  }
+
+  return getContract('FoodTraceability', contractAddress);
+};
 
 // Get blockchain network information
 const getNetworkInfo = async () => {
@@ -13,13 +27,13 @@ const getNetworkInfo = async () => {
       blockNumber: blockNumber
     };
   } catch (error) {
-    console.error('Error getting network info:', error);
+    console.error('Error getting network info:', sanitizeForLog(error));
     throw error;
   }
 };
 
 // Register product on blockchain
-const registerProductOnChain = async (productData) => {
+const registerProductOnChain = async (productData, options = {}) => {
   try {
     const contractAddress = process.env.CONTRACT_ADDRESS;
     
@@ -27,7 +41,7 @@ const registerProductOnChain = async (productData) => {
       throw new Error('Contract address not configured');
     }
     
-    const contract = getContract('FoodTraceability', contractAddress);
+    const contract = getWriteContract(contractAddress, options.signerPrivateKey);
     
     // Call smart contract function to register product
     const tx = await contract.registerProduct(
@@ -41,16 +55,16 @@ const registerProductOnChain = async (productData) => {
     
     return receipt.hash;
   } catch (error) {
-    console.error('Error registering product on chain:', error);
+    console.error('Error registering product on chain:', sanitizeForLog(error));
     throw error;
   }
 };
 
 // Update product status on blockchain
-const updateProductStatusOnChain = async (productId, status, location) => {
+const updateProductStatusOnChain = async (productId, status, location, options = {}) => {
   try {
     const contractAddress = process.env.CONTRACT_ADDRESS;
-    const contract = getContract('FoodTraceability', contractAddress);
+    const contract = getWriteContract(contractAddress, options.signerPrivateKey);
     
     // Call smart contract function to update status
     const tx = await contract.updateProductStatus(productId, status, location);
@@ -58,7 +72,7 @@ const updateProductStatusOnChain = async (productId, status, location) => {
     
     return receipt.hash;
   } catch (error) {
-    console.error('Error updating product status on chain:', error);
+    console.error('Error updating product status on chain:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -74,7 +88,7 @@ const getProductHistoryFromChain = async (productId) => {
     
     return history;
   } catch (error) {
-    console.error('Error getting product history from chain:', error);
+    console.error('Error getting product history from chain:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -107,7 +121,7 @@ const verifyProductOnChain = async (productId) => {
       }
     };
   } catch (error) {
-    console.error('Error verifying product on chain:', error);
+    console.error('Error verifying product on chain:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -124,7 +138,7 @@ const getTransaction = async (txHash) => {
       receipt: receipt
     };
   } catch (error) {
-    console.error('Error getting transaction:', error);
+    console.error('Error getting transaction:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -148,7 +162,7 @@ const getAllBlockchainLogs = async () => {
       args: event.args
     }));
   } catch (error) {
-    console.error('Error getting blockchain logs:', error);
+    console.error('Error getting blockchain logs:', sanitizeForLog(error));
     throw error;
   }
 };

@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
+const { ethers } = require('ethers');
 const Product = require('../models/Product.model');
 const blockchainService = require('./blockchain.service');
+const { sanitizeForLog } = require('../utils/logSanitizer');
+const {
+  createTraceabilityProof,
+  verifyTraceabilityProof
+} = require('../utils/traceabilityProof');
 
 const STATUS_MAP = {
   PENDING: 'Pending',
@@ -12,6 +18,16 @@ const STATUS_MAP = {
   INSTORE: 'InStore',
   IN_STORE: 'InStore',
   SOLD: 'Sold'
+};
+
+const ONCHAIN_CREATE_ROLES = new Set(['ADMIN', 'MANUFACTURER']);
+const STATUS_ROLE_PERMISSIONS = {
+  Pending: new Set(['ADMIN']),
+  Produced: new Set(['ADMIN', 'MANUFACTURER']),
+  InTransit: new Set(['ADMIN', 'TRANSPORTER']),
+  Delivered: new Set(['ADMIN', 'TRANSPORTER', 'STORE']),
+  InStore: new Set(['ADMIN', 'STORE']),
+  Sold: new Set(['ADMIN', 'STORE'])
 };
 
 const normalizeStatus = (status = 'Pending') => {
@@ -50,14 +66,27 @@ const serializeProduct = (productDocument) => {
   }
 
   const product = productDocument.toObject ? productDocument.toObject() : productDocument;
+  const proofVerification = verifyTraceabilityProof(product);
 
   return {
     ...product,
     id: product.productId,
+    batchId: product.productId,
+    entityType: product.entityType || 'BATCH',
+    batchNumber: product.batchNumber,
+    lotSize: product.lotSize,
+    unit: product.unit,
     currentStatus: product.status,
     manufacturer: product.producer?.name,
     manufacturerAddress: product.producer?.address,
     blockchainTxHash: product.transactionHash,
+    traceabilityIntegrity: {
+      isValid: proofVerification.isValid,
+      reason: proofVerification.reason || null,
+      payloadHash: product.traceabilityProof?.payloadHash || null,
+      signerAddress: product.traceabilityProof?.signerAddress || null,
+      signedAt: product.traceabilityProof?.signedAt || null
+    },
     history: serializeHistory(product.history)
   };
 };
@@ -92,15 +121,109 @@ const createHistoryEntry = ({ actor, status, location, notes = '' }) => ({
   notes
 });
 
-const generateProductId = () => `PROD-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
+const generateProductId = () => `BATCH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
+const generateBatchNumber = () => `LOT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`.toUpperCase();
 
-// Create a new product
-const createProduct = async (productData, user) => {
+const parseLotSize = (value) => {
+  if (value === undefined || value === null || value === '') {
+    return 1;
+  }
+
+  const lotSize = Number(value);
+  if (!Number.isFinite(lotSize) || lotSize < 1) {
+    throw new Error('lotSize must be a positive number greater than or equal to 1.');
+  }
+
+  return Math.floor(lotSize);
+};
+
+const assertCreatePermission = (user) => {
+  const role = user?.role ? String(user.role).toUpperCase() : '';
+
+  if (!ONCHAIN_CREATE_ROLES.has(role)) {
+    throw new Error('Role is not allowed to create products on-chain. Allowed roles: ADMIN, MANUFACTURER.');
+  }
+};
+
+const assertStatusPermission = (user, normalizedStatus) => {
+  const role = user?.role ? String(user.role).toUpperCase() : '';
+  const allowedRoles = STATUS_ROLE_PERMISSIONS[normalizedStatus];
+
+  if (!allowedRoles) {
+    throw new Error(`Unsupported status for on-chain update: ${normalizedStatus}`);
+  }
+
+  if (!allowedRoles.has(role)) {
+    throw new Error(`Role ${role || 'UNKNOWN'} is not allowed to set status ${normalizedStatus}.`);
+  }
+};
+
+const resolveSigningOptions = (user, txOptions = {}) => {
+  const signerPrivateKey = txOptions.signerPrivateKey;
+  const expectedWalletAddress = txOptions.expectedWalletAddress;
+
+  if (!signerPrivateKey) {
+    throw new Error('User private key is required. Provide it in x-user-private-key header or userPrivateKey in request body.');
+  }
+
+  const wallet = new ethers.Wallet(signerPrivateKey.trim());
+
+  if (user?.walletAddress) {
+    const normalizedUserWallet = user.walletAddress.toLowerCase();
+    if (wallet.address.toLowerCase() !== normalizedUserWallet) {
+      throw new Error('Provided private key does not match your walletAddress profile.');
+    }
+  }
+
+  if (expectedWalletAddress && wallet.address.toLowerCase() !== expectedWalletAddress.toLowerCase()) {
+    throw new Error('Provided private key does not match digitally signed wallet address.');
+  }
+
+  return {
+    signerPrivateKey: signerPrivateKey.trim(),
+    signerAddress: wallet.address
+  };
+};
+
+const findProductOrBatch = async (identifier) => {
+  let product = await Product.findOne({ productId: identifier });
+
+  if (!product) {
+    product = await Product.findOne({ batchNumber: identifier });
+  }
+
+  if (!product) {
+    product = await Product.findOne({ qrCode: identifier });
+  }
+
+  if (!product && mongoose.Types.ObjectId.isValid(identifier)) {
+    product = await Product.findById(identifier);
+  }
+
+  return product;
+};
+
+// Create a new batch (stored in Product collection)
+const createProduct = async (productData, user, txOptions = {}) => {
   try {
+    assertCreatePermission(user);
+    const signingOptions = resolveSigningOptions(user, txOptions);
     const status = normalizeStatus(productData.status || productData.currentStatus || 'Produced');
     const productId = productData.productId || generateProductId();
+    const batchNumber = productData.batchNumber || generateBatchNumber();
     const producer = buildProducer(productData, user);
     const origin = productData.origin || productData.productionPlace || 'Unknown origin';
+    const lotSize = parseLotSize(productData.lotSize || productData.quantity);
+    const unit = productData.unit || 'unit';
+
+    const existingBatch = await Product.findOne({ batchNumber });
+    if (existingBatch) {
+      throw new Error(`Batch number ${batchNumber} already exists.`);
+    }
+
+    if (!producer.address || producer.address === 'unknown-address') {
+      producer.address = signingOptions.signerAddress;
+    }
 
     const product = new Product({
       productId,
@@ -109,6 +232,10 @@ const createProduct = async (productData, user) => {
       category: productData.category || 'FOOD',
       producer,
       origin,
+      entityType: 'BATCH',
+      batchNumber,
+      lotSize,
+      unit,
       expiryDate: productData.expiryDate || undefined,
       qrCode: productData.qrCode || `FOODCHAIN-${productId}`,
       status,
@@ -127,16 +254,18 @@ const createProduct = async (productData, user) => {
         productId: product.productId,
         name: product.name,
         origin: product.origin
-      });
+      }, signingOptions);
       product.transactionHash = txHash;
     } catch (blockchainError) {
       console.warn('Blockchain registration skipped:', blockchainError.message);
     }
 
+    product.traceabilityProof = await createTraceabilityProof(product, signingOptions.signerPrivateKey);
+
     await product.save();
     return serializeProduct(product);
   } catch (error) {
-    console.error('Error in createProduct service:', error);
+    console.error('Error in createProduct service:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -147,7 +276,7 @@ const getAllProducts = async () => {
     const products = await Product.find().sort({ createdAt: -1 });
     return products.map(serializeProduct);
   } catch (error) {
-    console.error('Error in getAllProducts service:', error);
+    console.error('Error in getAllProducts service:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -155,29 +284,26 @@ const getAllProducts = async () => {
 // Get product by ID
 const getProductById = async (productId) => {
   try {
-    let product = await Product.findOne({ productId });
-
-    if (!product && mongoose.Types.ObjectId.isValid(productId)) {
-      product = await Product.findById(productId);
-    }
+    const product = await findProductOrBatch(productId);
 
     return serializeProduct(product);
   } catch (error) {
-    console.error('Error in getProductById service:', error);
+    console.error('Error in getProductById service:', sanitizeForLog(error));
     throw error;
   }
 };
 
 // Update product status
-const updateProductStatus = async (productId, status, metadata = {}, user) => {
+const updateProductStatus = async (productId, status, metadata = {}, user, txOptions = {}) => {
   try {
+    const normalizedStatus = normalizeStatus(status);
+    assertStatusPermission(user, normalizedStatus);
+    const signingOptions = resolveSigningOptions(user, txOptions);
     const product = await Product.findOne({ productId });
 
     if (!product) {
       throw new Error('Product not found');
     }
-
-    const normalizedStatus = normalizeStatus(status);
     const actor = metadata.actor || user?.username || user?.email || 'System';
     const location = metadata.location || product.origin || 'Unknown location';
 
@@ -195,17 +321,20 @@ const updateProductStatus = async (productId, status, metadata = {}, user) => {
       const txHash = await blockchainService.updateProductStatusOnChain(
         product.productId,
         normalizedStatus,
-        location
+        location,
+        signingOptions
       );
       product.transactionHash = txHash;
     } catch (blockchainError) {
       console.warn('Blockchain status update skipped:', blockchainError.message);
     }
 
+    product.traceabilityProof = await createTraceabilityProof(product, signingOptions.signerPrivateKey);
+
     await product.save();
     return serializeProduct(product);
   } catch (error) {
-    console.error('Error in updateProductStatus service:', error);
+    console.error('Error in updateProductStatus service:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -221,7 +350,7 @@ const getProductHistory = async (productId) => {
 
     return serializeHistory(product.history);
   } catch (error) {
-    console.error('Error in getProductHistory service:', error);
+    console.error('Error in getProductHistory service:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -236,11 +365,7 @@ const getProductTraceability = async (productId) => {
   try {
     console.log(`🔍 Getting traceability for product: ${productId}`);
 
-    let product = await Product.findOne({ productId });
-
-    if (!product) {
-      product = await Product.findOne({ qrCode: productId });
-    }
+    const product = await findProductOrBatch(productId);
 
     if (!product) {
       return {
@@ -270,20 +395,29 @@ const getProductTraceability = async (productId) => {
 
     const serializedProduct = serializeProduct(product);
     const journey = formatProductJourney(product, blockchainHistory);
+    const proofStatus = verifyTraceabilityProof(product);
 
     return {
       success: true,
       message: 'Product traceability retrieved successfully',
-      verified: blockchainVerified,
+      verified: blockchainVerified && proofStatus.isValid,
+      proofVerified: proofStatus.isValid,
       dataSource: blockchainVerified ? 'blockchain' : 'database',
       product: serializedProduct,
       journey,
       blockchainHistory,
+      integrity: {
+        isValid: proofStatus.isValid,
+        reason: proofStatus.reason || null,
+        computedHash: proofStatus.computedHash || null,
+        storedHash: proofStatus.storedHash || null,
+        recoveredAddress: proofStatus.recoveredAddress || null
+      },
       timestamp: new Date().toISOString()
     };
 
   } catch (error) {
-    console.error('Error in getProductTraceability service:', error);
+    console.error('Error in getProductTraceability service:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -426,7 +560,7 @@ const updateProduct = async (productId, updateData, user) => {
     await product.save();
     return serializeProduct(product);
   } catch (error) {
-    console.error('Error updating product:', error);
+    console.error('Error updating product:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -441,7 +575,7 @@ const deleteProduct = async (productId) => {
     const product = await Product.findOneAndDelete({ productId });
     return serializeProduct(product);
   } catch (error) {
-    console.error('Error deleting product:', error);
+    console.error('Error deleting product:', sanitizeForLog(error));
     throw error;
   }
 };
@@ -456,18 +590,73 @@ const getProductByQRCode = async (qrCode) => {
     const product = await Product.findOne({ qrCode });
     return serializeProduct(product);
   } catch (error) {
-    console.error('Error fetching product by QR code:', error);
+    console.error('Error fetching product by QR code:', sanitizeForLog(error));
     throw error;
   }
 };
 
+const getBatchByNumber = async (batchNumber) => {
+  try {
+    const product = await Product.findOne({ batchNumber });
+    return serializeProduct(product);
+  } catch (error) {
+    console.error('Error fetching batch by number:', sanitizeForLog(error));
+    throw error;
+  }
+};
+
+const verifyTraceability = async (identifier) => {
+  try {
+    const product = await findProductOrBatch(identifier);
+
+    if (!product) {
+      return {
+        success: false,
+        message: 'Product or batch not found'
+      };
+    }
+
+    const proofStatus = verifyTraceabilityProof(product);
+    let blockchainVerified = false;
+
+    try {
+      const verificationResult = await blockchainService.verifyProductOnChain(product.productId);
+      blockchainVerified = Boolean(verificationResult?.verified);
+    } catch (blockchainError) {
+      console.warn('Blockchain verification skipped:', blockchainError.message);
+    }
+
+    return {
+      success: true,
+      verified: proofStatus.isValid && blockchainVerified,
+      proofVerified: proofStatus.isValid,
+      blockchainVerified,
+      identifier,
+      productId: product.productId,
+      batchNumber: product.batchNumber,
+      signerAddress: product.traceabilityProof?.signerAddress || null,
+      details: proofStatus
+    };
+  } catch (error) {
+    console.error('Error verifying traceability:', sanitizeForLog(error));
+    throw error;
+  }
+};
+
+const createBatch = async (batchData, user, txOptions = {}) => {
+  return createProduct(batchData, user, txOptions);
+};
+
 module.exports = {
   createProduct,
+  createBatch,
   getAllProducts,
   getProductById,
+  getBatchByNumber,
   updateProductStatus,
   getProductHistory,
   getProductTraceability,
+  verifyTraceability,
   updateProduct,
   deleteProduct,
   getProductByQRCode

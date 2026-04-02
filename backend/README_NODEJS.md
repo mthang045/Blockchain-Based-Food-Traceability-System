@@ -18,6 +18,8 @@ backend/
 │   └── blockchain.controller.js
 ├── middleware/             # Express middleware
 │   └── auth.middleware.js
+│   └── signature.middleware.js
+│   └── txSigning.middleware.js
 ├── models/                 # Database models
 │   ├── Product.model.js
 │   └── User.model.js
@@ -96,10 +98,15 @@ npm start
 
 ### Products
 - `GET /api/products` - Get all products
+- `GET /api/products/batch/:batchNumber` - Get batch by batch number
+- `GET /api/products/batch/:batchNumber/traceability/verify` - Verify batch traceability integrity
 - `GET /api/products/:productId` - Get product by ID
 - `GET /api/products/:productId/history` - Get product history from blockchain
-- `POST /api/products` - Create new product (requires auth)
-- `PUT /api/products/:productId/status` - Update product status (requires auth)
+- `GET /api/products/:productId/traceability/verify` - Verify product traceability integrity
+- `POST /api/products` - Create new product (requires auth, role ADMIN/MANUFACTURER, user-signed tx)
+- `POST /api/products/batches` - Create new batch explicitly (same security requirements)
+- `POST /api/products/signature/challenge` - Get canonical message challenge to sign (requires auth)
+- `PUT /api/products/:productId/status` - Update product status (requires auth, role-based, user-signed tx)
 
 ### Users
 - `POST /api/users/register` - Register new user
@@ -120,6 +127,115 @@ The API uses JWT (JSON Web Tokens) for authentication. Include the token in the 
 ```
 Authorization: Bearer <your_token>
 ```
+
+## ✍️ User-Signed Transactions
+
+For blockchain write endpoints, each user signs with their own wallet private key per request.
+
+- Header (recommended): `x-user-private-key: 0x...`
+- Fallback body field: `userPrivateKey`
+
+Security notes:
+- Private key is only used in-memory to sign the transaction.
+- `userPrivateKey` is removed from request body before business logic continues.
+- If profile has `walletAddress`, backend verifies it matches the provided private key.
+
+### Request-Level Digital Signature (Anti-replay)
+
+Protected blockchain-write routes now require request signature headers:
+
+- `x-wallet-address`: Wallet used to sign the request message
+- `x-signature`: Signature of canonical request message
+- `x-signature-timestamp`: Unix epoch milliseconds
+- `x-signature-nonce`: Random one-time nonce
+
+Backend validates:
+
+- Signature is cryptographically valid
+- Signed wallet matches user profile wallet (if available)
+- Nonce has not been reused
+- Timestamp is fresh (5-minute window)
+
+Canonical message format to sign:
+
+```text
+FoodTraceability Request Authorization
+user:<userId>
+wallet:<walletAddress>
+action:<METHOD> <PATH>
+timestamp:<timestamp>
+nonce:<nonce>
+```
+
+Challenge endpoint request:
+
+```http
+POST /api/products/signature/challenge
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{
+	"method": "POST",
+	"path": "/api/products",
+	"walletAddress": "0x..."
+}
+```
+
+The backend returns `message`, `timestamp`, and `nonce` to be signed by MetaMask.
+
+MetaMask frontend helper is available in [frontend/src/app/services/signatureService.js](../frontend/src/app/services/signatureService.js).
+Client-side private key prompt/cache helper is available in [frontend/src/app/services/txSigningClient.js](../frontend/src/app/services/txSigningClient.js).
+
+Example create batch request:
+
+```http
+POST /api/products
+Authorization: Bearer <jwt>
+x-wallet-address: 0x...
+x-signature: 0x...
+x-signature-timestamp: 1712040000000
+x-signature-nonce: 3f4dcb44-4f26-4aaf-a05d-e4e73a2f42f1
+x-user-private-key: 0x...
+Content-Type: application/json
+
+{
+	"name": "Organic Rice",
+	"origin": "Can Tho",
+	"category": "FOOD",
+	"batchNumber": "LOT-20260402-A1",
+	"lotSize": 200,
+	"unit": "kg",
+	"description": "Batch 2026-04"
+}
+```
+
+Example update status request:
+
+```http
+PUT /api/products/PROD-ABC123/status
+Authorization: Bearer <jwt>
+x-wallet-address: 0x...
+x-signature: 0x...
+x-signature-timestamp: 1712040005000
+x-signature-nonce: 6845dc64-2e63-462f-9aef-8f4fc9b6fd4e
+x-user-private-key: 0x...
+Content-Type: application/json
+
+{
+	"status": "InTransit",
+	"location": "Distribution Hub A",
+	"notes": "Loaded onto truck"
+}
+```
+
+## 🧭 Role Rules For On-Chain Actions
+
+- Create product on-chain: `ADMIN`, `MANUFACTURER`
+- Update status to `Produced`: `ADMIN`, `MANUFACTURER`
+- Update status to `InTransit`: `ADMIN`, `TRANSPORTER`
+- Update status to `Delivered`: `ADMIN`, `TRANSPORTER`, `STORE`
+- Update status to `InStore`: `ADMIN`, `STORE`
+- Update status to `Sold`: `ADMIN`, `STORE`
 
 ## 🏗️ Architecture
 
@@ -190,7 +306,7 @@ The system integrates with Ethereum smart contracts using ethers.js:
 | PORT | Server port | 3000 |
 | MONGODB_URI | MongoDB connection string | - |
 | RPC_URL | Blockchain RPC endpoint | http://127.0.0.1:8545 |
-| PRIVATE_KEY | Wallet private key | - |
+| PRIVATE_KEY | Optional server fallback signer (legacy mode) | - |
 | CONTRACT_ADDRESS | Deployed contract address | - |
 | JWT_SECRET | Secret for JWT signing | - |
 | JWT_EXPIRES_IN | Token expiration time | 7d |
@@ -199,7 +315,26 @@ The system integrates with Ethereum smart contracts using ethers.js:
 
 ```bash
 npm test
+npm run test:api-security
+npm run test:signature-traceability
+npm run test:e2e-batch-signature
 ```
+
+## 🔄 Data Migration To Batch Model
+
+Run migration for existing product records:
+
+```bash
+npm run migrate:batch-model
+```
+
+Optional env for migration signing:
+
+```env
+MIGRATION_SIGNER_PRIVATE_KEY=0x...
+```
+
+If missing, script still migrates batch fields but skips regenerating traceability proofs.
 
 ## 📦 Dependencies
 

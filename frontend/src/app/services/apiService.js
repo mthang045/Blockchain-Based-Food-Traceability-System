@@ -1,4 +1,6 @@
 import apiClient from './api';
+import { buildSignedHeaders } from './signatureService';
+import { ensureSigningPrivateKey } from './txSigningClient';
 
 // User & Authentication API
 export const authAPI = {
@@ -55,14 +57,36 @@ export const productAPI = {
     return await apiClient.get(`/products/${productId}`);
   },
 
+  getBatchByNumber: async (batchNumber) => {
+    return await apiClient.get(`/products/batch/${batchNumber}`);
+  },
+
   // Get product by QR Code
   getProductByQRCode: async (qrCode) => {
     return await apiClient.get(`/products/qr/${encodeURIComponent(qrCode)}`);
   },
 
-  // Create new product
-  createProduct: async (productData) => {
-    return await apiClient.post('/products', productData);
+  // Create new batch (product collection is batch-first)
+  createProduct: async (productData, options = {}) => {
+    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey();
+    const headers = await buildSignedHeaders({ method: 'POST', path: '/api/products' });
+    return await apiClient.post('/products', productData, {
+      headers: {
+        ...headers,
+        ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
+      },
+    });
+  },
+
+  createBatch: async (batchData, options = {}) => {
+    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey();
+    const headers = await buildSignedHeaders({ method: 'POST', path: '/api/products/batches' });
+    return await apiClient.post('/products/batches', batchData, {
+      headers: {
+        ...headers,
+        ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
+      },
+    });
   },
 
   // Update product
@@ -71,8 +95,17 @@ export const productAPI = {
   },
 
   // Update product status
-  updateProductStatus: async (productId, status, metadata = {}) => {
-    return await apiClient.put(`/products/${productId}/status`, { status, ...metadata });
+  updateProductStatus: async (productId, status, metadata = {}, options = {}) => {
+    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey();
+    const path = `/api/products/${productId}/status`;
+    const headers = await buildSignedHeaders({ method: 'PUT', path });
+
+    return await apiClient.put(`/products/${productId}/status`, { status, ...metadata }, {
+      headers: {
+        ...headers,
+        ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
+      },
+    });
   },
 
   // Delete product
@@ -88,6 +121,14 @@ export const productAPI = {
   // Get traceability payload for public QR scanning
   getTraceability: async (productId) => {
     return await apiClient.get(`/products/${productId}/traceability`);
+  },
+
+  verifyTraceability: async (productId) => {
+    return await apiClient.get(`/products/${productId}/traceability/verify`);
+  },
+
+  verifyBatchTraceability: async (batchNumber) => {
+    return await apiClient.get(`/products/batch/${batchNumber}/traceability/verify`);
   },
 };
 

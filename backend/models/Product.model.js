@@ -9,6 +9,12 @@ const historyEntrySchema = new mongoose.Schema({
 }, { _id: true });
 
 const productSchema = new mongoose.Schema({
+  entityType: {
+    type: String,
+    enum: ['BATCH'],
+    default: 'BATCH',
+    required: true
+  },
   productId: {
     type: String,
     required: true,
@@ -40,8 +46,32 @@ const productSchema = new mongoose.Schema({
   history: { type: [historyEntrySchema], default: [] },
   qrCode: String,
   origin: { type: String, trim: true },
-  batchNumber: { type: String, trim: true },
-  expiryDate: Date
+  batchNumber: {
+    type: String,
+    trim: true,
+    required: true,
+    unique: true,
+    index: true
+  },
+  lotSize: {
+    type: Number,
+    min: 1,
+    required: true,
+    default: 1
+  },
+  unit: {
+    type: String,
+    trim: true,
+    default: 'unit'
+  },
+  expiryDate: Date,
+  traceabilityProof: {
+    payloadHash: { type: String, trim: true },
+    signature: { type: String, trim: true },
+    signerAddress: { type: String, trim: true },
+    algorithm: { type: String, trim: true },
+    signedAt: Date
+  }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -49,9 +79,7 @@ const productSchema = new mongoose.Schema({
 });
 
 // Indexes
-productSchema.index({ productId: 1 });
 productSchema.index({ 'producer.address': 1 });
-productSchema.index({ transactionHash: 1 });
 productSchema.index({ status: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ createdAt: -1 });

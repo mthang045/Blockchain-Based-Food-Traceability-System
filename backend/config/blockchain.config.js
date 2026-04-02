@@ -33,6 +33,17 @@ const getSigner = () => {
   return new ethers.Wallet(privateKey, provider);
 };
 
+// Get signer from a provided private key (per-user transaction signing)
+const getSignerFromPrivateKey = (privateKey) => {
+  const provider = getProvider();
+
+  if (!privateKey || typeof privateKey !== 'string') {
+    throw new Error('A valid private key is required for user-signed transactions');
+  }
+
+  return new ethers.Wallet(privateKey.trim(), provider);
+};
+
 // Get contract instance
 const getContract = (contractName, contractAddress) => {
   try {
@@ -41,6 +52,18 @@ const getContract = (contractName, contractAddress) => {
     return new ethers.Contract(contractAddress, abi, signer);
   } catch (error) {
     console.error(`Error initializing contract ${contractName}:`, error.message);
+    throw error;
+  }
+};
+
+// Get contract instance signed with a provided private key
+const getContractWithPrivateKey = (contractName, contractAddress, privateKey) => {
+  try {
+    const abi = loadContractABI(contractName);
+    const signer = getSignerFromPrivateKey(privateKey);
+    return new ethers.Contract(contractAddress, abi, signer);
+  } catch (error) {
+    console.error(`Error initializing contract ${contractName} with custom signer:`, error.message);
     throw error;
   }
 };
@@ -60,7 +83,9 @@ const getContractReadOnly = (contractName, contractAddress) => {
 module.exports = {
   getProvider,
   getSigner,
+  getSignerFromPrivateKey,
   getContract,
+  getContractWithPrivateKey,
   getContractReadOnly,
   loadContractABI
 };
