@@ -7,12 +7,24 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const clearAuthStorage = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('token_expiry');
+    localStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('refresh_token');
+  };
+
   useEffect(() => {
     // Load user from localStorage or sessionStorage and verify token
     const loadUser = async () => {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
       const savedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
       const tokenExpiry = localStorage.getItem('token_expiry');
+      const hasLocalToken = Boolean(localStorage.getItem('token'));
       // Optimistic restore: if we have a saved user, set it immediately so UI doesn't flash logged out
       if (savedUser) {
         try {
@@ -23,18 +35,14 @@ export const AuthProvider = ({ children }) => {
       }
 
       // If there's an expiry for remembered tokens and it's already passed, clear storage and stop
-      if (tokenExpiry && Number(tokenExpiry) > 0 && Date.now() > Number(tokenExpiry)) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('token_expiry');
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('user');
+      if (hasLocalToken && tokenExpiry && Number(tokenExpiry) > 0 && Date.now() > Number(tokenExpiry)) {
+        clearAuthStorage();
         setUser(null);
         setLoading(false);
         return;
       }
 
-      if (token) {
+      if (token || refreshToken) {
         try {
           // Verify token is still valid by fetching profile
           // Log token presence to help debug reload/auth issues
@@ -65,14 +73,14 @@ export const AuthProvider = ({ children }) => {
             }
           }
         } catch (error) {
-          // Token invalid, clear both storages
+          // Only clear auth if token is truly unauthorized.
+          // For transient network/server errors, keep stored session.
           // eslint-disable-next-line no-console
           console.warn('Token validation failed on load:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('token');
-          sessionStorage.removeItem('user');
-          setUser(null);
+          if (error?.status === 401 || error?.status === 403) {
+            clearAuthStorage();
+            setUser(null);
+          }
         }
       }
       setLoading(false);
@@ -81,12 +89,12 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  const login = async (email, password, remember = false) => {
+  const login = async (email, password, remember = true) => {
     try {
       const response = await authAPI.login({ email, password });
       
       if (response.success) {
-        const { user, token } = response.data;
+        const { user, token, refreshToken } = response.data;
 
         // Debug: log token and storage choice
         // eslint-disable-next-line no-console
@@ -97,6 +105,7 @@ export const AuthProvider = ({ children }) => {
           const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
           const expiry = Date.now() + threeDaysMs;
           localStorage.setItem('token', token);
+          localStorage.setItem('refresh_token', refreshToken);
           localStorage.setItem('user', JSON.stringify(user));
           localStorage.setItem('token_expiry', String(expiry));
           // schedule automatic cleanup when expiry elapses
@@ -110,10 +119,13 @@ export const AuthProvider = ({ children }) => {
           console.debug('AuthContext.login: token stored in localStorage with 3-day expiry');
         } else {
           sessionStorage.setItem('token', token);
+          sessionStorage.setItem('refresh_token', refreshToken);
           sessionStorage.setItem('user', JSON.stringify(user));
           // eslint-disable-next-line no-console
           console.debug('AuthContext.login: token stored in sessionStorage');
         }
+
+        localStorage.setItem('remember_login', remember ? '1' : '0');
 
         setUser(user);
         return { success: true, user };
@@ -129,12 +141,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (userData, remember = false) => {
+  const register = async (userData, remember = true) => {
     try {
       const response = await authAPI.register(userData);
       
       if (response.success) {
-        const { user, token } = response.data;
+        const { user, token, refreshToken } = response.data;
 
         // Debug: log token and storage choice
         // eslint-disable-next-line no-console
@@ -145,6 +157,7 @@ export const AuthProvider = ({ children }) => {
           const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
           const expiry = Date.now() + threeDaysMs;
           localStorage.setItem('token', token);
+          localStorage.setItem('refresh_token', refreshToken);
           localStorage.setItem('user', JSON.stringify(user));
           localStorage.setItem('token_expiry', String(expiry));
           setTimeout(() => {
@@ -157,10 +170,13 @@ export const AuthProvider = ({ children }) => {
           console.debug('AuthContext.register: token stored in localStorage with 3-day expiry');
         } else {
           sessionStorage.setItem('token', token);
+          sessionStorage.setItem('refresh_token', refreshToken);
           sessionStorage.setItem('user', JSON.stringify(user));
           // eslint-disable-next-line no-console
           console.debug('AuthContext.register: token stored in sessionStorage');
         }
+
+        localStorage.setItem('remember_login', remember ? '1' : '0');
 
         setUser(user);
         return { success: true, user };
@@ -179,11 +195,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     // Clear both storages to fully log out
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('token_expiry');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
+    clearAuthStorage();
   };
 
   const updateProfile = async (updates) => {
@@ -192,7 +204,11 @@ export const AuthProvider = ({ children }) => {
 
       if (response.success) {
         setUser(response.data);
-        localStorage.setItem('user', JSON.stringify(response.data));
+        if (localStorage.getItem('token')) {
+          localStorage.setItem('user', JSON.stringify(response.data));
+        } else {
+          sessionStorage.setItem('user', JSON.stringify(response.data));
+        }
         return { success: true, user: response.data };
       }
 

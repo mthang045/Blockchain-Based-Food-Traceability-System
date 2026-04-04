@@ -122,7 +122,31 @@ const createHistoryEntry = ({ actor, status, location, notes = '' }) => ({
 });
 
 const generateProductId = () => `BATCH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
-const generateBatchNumber = () => `LOT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`.toUpperCase();
+const generateBatchNumber = () => {
+  const randomPart = Math.random().toString(36).slice(2, 10).toUpperCase();
+  return `BMT-${randomPart}`;
+};
+
+const generateUniqueBatchNumber = async () => {
+  const maxRetries = 12;
+
+  for (let attempt = 0; attempt < maxRetries; attempt += 1) {
+    const candidate = generateBatchNumber();
+    const exists = await Product.exists({ batchNumber: candidate });
+
+    if (!exists) {
+      return candidate;
+    }
+  }
+
+  const fallback = `BMT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const fallbackExists = await Product.exists({ batchNumber: fallback });
+  if (fallbackExists) {
+    throw new Error('Unable to generate a unique batch number. Please try again.');
+  }
+
+  return fallback;
+};
 
 const parseLotSize = (value) => {
   if (value === undefined || value === null || value === '') {
@@ -210,7 +234,7 @@ const createProduct = async (productData, user, txOptions = {}) => {
     const signingOptions = resolveSigningOptions(user, txOptions);
     const status = normalizeStatus(productData.status || productData.currentStatus || 'Produced');
     const productId = productData.productId || generateProductId();
-    const batchNumber = productData.batchNumber || generateBatchNumber();
+    const batchNumber = productData.batchNumber || await generateUniqueBatchNumber();
     const producer = buildProducer(productData, user);
     const origin = productData.origin || productData.productionPlace || 'Unknown origin';
     const lotSize = parseLotSize(productData.lotSize || productData.quantity);
@@ -539,6 +563,29 @@ const updateProduct = async (productId, updateData, user) => {
     if (updateData.expiryDate !== undefined) {
       product.expiryDate = updateData.expiryDate || undefined;
     }
+    if (updateData.batchNumber !== undefined) {
+      const normalizedBatchNumber = String(updateData.batchNumber || '').trim();
+      if (!normalizedBatchNumber) {
+        throw new Error('batchNumber is required when provided.');
+      }
+
+      const existingBatch = await Product.findOne({
+        batchNumber: normalizedBatchNumber,
+        _id: { $ne: product._id }
+      });
+
+      if (existingBatch) {
+        throw new Error(`Batch number ${normalizedBatchNumber} already exists.`);
+      }
+
+      product.batchNumber = normalizedBatchNumber;
+    }
+    if (updateData.lotSize !== undefined) {
+      product.lotSize = parseLotSize(updateData.lotSize);
+    }
+    if (updateData.unit !== undefined) {
+      product.unit = String(updateData.unit || '').trim() || 'unit';
+    }
     if (updateData.qrCode !== undefined) {
       product.qrCode = updateData.qrCode;
     }
@@ -552,7 +599,7 @@ const updateProduct = async (productId, updateData, user) => {
           actor: user?.username || user?.email || 'System',
           status: product.status,
           location: updateData.location || product.origin || 'Unknown location',
-          notes: updateData.notes || 'Product updated'
+          notes: updateData.notes || 'Batch updated'
         })
       );
     }

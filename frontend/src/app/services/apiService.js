@@ -14,6 +14,10 @@ export const authAPI = {
     return await apiClient.post('/users/login', credentials);
   },
 
+  refreshToken: async (refreshToken) => {
+    return await apiClient.post('/users/refresh', { refreshToken });
+  },
+
   // Get current user profile
   getProfile: async () => {
     return await apiClient.get('/users/profile');

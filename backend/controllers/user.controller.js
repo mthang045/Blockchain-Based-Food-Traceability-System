@@ -40,6 +40,25 @@ const login = async (req, res) => {
   }
 };
 
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken: incomingRefreshToken } = req.body || {};
+    const result = await userService.refreshAccessToken(incomingRefreshToken);
+
+    res.status(200).json({
+      success: true,
+      message: 'Token refreshed successfully',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    res.status(401).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 // Get user profile
 const getProfile = async (req, res) => {
   try {
@@ -166,6 +185,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
   register,
   login,
+  refreshToken,
   getProfile,
   getAllUsers,
   updateProfile,

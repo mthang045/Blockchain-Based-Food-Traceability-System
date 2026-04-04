@@ -1,7 +1,70 @@
 const User = require('../models/User.model');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const normalizeRole = (role = 'CONSUMER') => String(role).toUpperCase();
+
+const getAccessTokenSecret = () => process.env.JWT_SECRET || 'your_jwt_secret';
+const getAccessTokenExpiry = () => process.env.JWT_EXPIRES_IN || '7d';
+const getRefreshTokenSecret = () => process.env.JWT_REFRESH_SECRET || getAccessTokenSecret();
+const getRefreshTokenExpiry = () => process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+const parseExpiresToDate = (expiresInValue) => {
+  if (typeof expiresInValue === 'number') {
+    return new Date(Date.now() + expiresInValue * 1000);
+  }
+
+  if (typeof expiresInValue !== 'string') {
+    return null;
+  }
+
+  const normalized = expiresInValue.trim();
+  const directNumber = Number(normalized);
+  if (!Number.isNaN(directNumber)) {
+    return new Date(Date.now() + directNumber * 1000);
+  }
+
+  const match = normalized.match(/^(\d+)([smhd])$/i);
+  if (!match) {
+    return null;
+  }
+
+  const value = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  const multiplierByUnit = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000
+  };
+
+  return new Date(Date.now() + value * multiplierByUnit[unit]);
+};
+
+const generateRefreshToken = (user) => {
+  const payload = {
+    id: user._id,
+    type: 'refresh'
+  };
+
+  return jwt.sign(payload, getRefreshTokenSecret(), { expiresIn: getRefreshTokenExpiry() });
+};
+
+const issueSessionTokens = async (user) => {
+  const token = generateToken(user);
+  const refreshToken = generateRefreshToken(user);
+  user.refreshTokenHash = hashToken(refreshToken);
+  user.refreshTokenExpiresAt = parseExpiresToDate(getRefreshTokenExpiry());
+  await user.save();
+
+  return {
+    user,
+    token,
+    refreshToken
+  };
+};
 
 // Register new user
 const registerUser = async (userData) => {
@@ -22,13 +85,7 @@ const registerUser = async (userData) => {
     });
     await user.save();
     
-    // Generate JWT token
-    const token = generateToken(user);
-    
-    return {
-      user,
-      token
-    };
+    return await issueSessionTokens(user);
   } catch (error) {
     console.error('Error in registerUser service:', error);
     throw error;
@@ -57,13 +114,7 @@ const loginUser = async (email, password) => {
       throw new Error('Invalid email or password');
     }
     
-    // Generate JWT token
-    const token = generateToken(user);
-    
-    return {
-      user,
-      token
-    };
+    return await issueSessionTokens(user);
   } catch (error) {
     console.error('Error in loginUser service:', error);
     throw error;
@@ -154,6 +205,39 @@ const deleteUser = async (userId) => {
   }
 };
 
+const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) {
+    throw new Error('Refresh token is required');
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, getRefreshTokenSecret());
+  } catch (error) {
+    throw new Error('Invalid or expired refresh token');
+  }
+
+  if (decoded?.type !== 'refresh' || !decoded?.id) {
+    throw new Error('Invalid refresh token payload');
+  }
+
+  const user = await User.findById(decoded.id);
+  if (!user || !user.isActive) {
+    throw new Error('User not found or inactive');
+  }
+
+  const incomingHash = hashToken(refreshToken);
+  if (!user.refreshTokenHash || user.refreshTokenHash !== incomingHash) {
+    throw new Error('Refresh token does not match current session');
+  }
+
+  if (user.refreshTokenExpiresAt && new Date(user.refreshTokenExpiresAt).getTime() < Date.now()) {
+    throw new Error('Refresh token has expired');
+  }
+
+  return await issueSessionTokens(user);
+};
+
 // Generate JWT token
 const generateToken = (user) => {
   const payload = {
@@ -162,8 +246,8 @@ const generateToken = (user) => {
     role: user.role
   };
   
-  const secret = process.env.JWT_SECRET || 'your_jwt_secret';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const secret = getAccessTokenSecret();
+  const expiresIn = getAccessTokenExpiry();
   
   return jwt.sign(payload, secret, { expiresIn });
 };
@@ -177,5 +261,6 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
-  generateToken
+  generateToken,
+  refreshAccessToken
 };

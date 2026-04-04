@@ -7,7 +7,14 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(() => {
+    const savedPreference = localStorage.getItem('remember_login');
+    if (savedPreference === null) {
+      return true;
+    }
+
+    return savedPreference === '1';
+  });
   const [name, setName] = useState('');
   const [role, setRole] = useState('consumer');
   const [phone, setPhone] = useState('');

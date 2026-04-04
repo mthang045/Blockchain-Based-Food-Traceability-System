@@ -15,11 +15,38 @@ export default function ProductsManagementPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
+    batchNumber: '',
+    lotSize: 1,
+    unit: 'kg',
     origin: '',
     description: '',
     status: 'Produced',
     expiryDate: '',
   });
+
+  const buildRandomBatchCode = () => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomPart = '';
+
+    for (let index = 0; index < 8; index += 1) {
+      randomPart += alphabet[Math.floor(Math.random() * alphabet.length)];
+    }
+
+    return `BMT-${randomPart}`;
+  };
+
+  const isBatchNumberConflict = (message = '') => {
+    return /batch number .+ already exists\.?/i.test(String(message));
+  };
+
+  const applyNewBatchNumberOnConflict = () => {
+    const nextBatchNumber = buildRandomBatchCode();
+    setFormData((prev) => ({
+      ...prev,
+      batchNumber: nextBatchNumber,
+    }));
+    toast.error('Mã lô bị trùng. Hệ thống đã tạo mã mới, vui lòng gửi lại.');
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -32,11 +59,11 @@ export default function ProductsManagementPage() {
       if (response.success) {
         setProducts(response.data);
       } else {
-        toast.error('Không thể tải danh sách sản phẩm');
+        toast.error('Không thể tải danh sách lô');
       }
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast.error('Lỗi khi tải sản phẩm');
+      toast.error('Lỗi khi tải lô');
     } finally {
       setLoading(false);
     }
@@ -45,6 +72,7 @@ export default function ProductsManagementPage() {
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.batchNumber && p.batchNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (p.qrCode && p.qrCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (p.producer?.username && p.producer.username.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -61,18 +89,29 @@ export default function ProductsManagementPage() {
         },
       };
       
-      const response = await productAPI.createProduct(productData);
+      const response = await productAPI.createBatch(productData);
       if (response.success) {
-        toast.success('Tạo sản phẩm thành công!');
+        toast.success('Tạo lô thành công!');
         setShowCreateModal(false);
-        setFormData({ name: '', origin: '', description: '', status: 'Produced', expiryDate: '' });
+        setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
         fetchProducts();
       } else {
-        toast.error(response.message || 'Không thể tạo sản phẩm');
+        if (isBatchNumberConflict(response.message)) {
+          applyNewBatchNumberOnConflict();
+          return;
+        }
+
+        toast.error(response.message || 'Không thể tạo lô');
       }
     } catch (error) {
       console.error('Error creating product:', error);
-      toast.error('Lỗi khi tạo sản phẩm');
+
+      if (isBatchNumberConflict(error?.message)) {
+        applyNewBatchNumberOnConflict();
+        return;
+      }
+
+      toast.error('Lỗi khi tạo lô');
     }
   };
 
@@ -81,34 +120,45 @@ export default function ProductsManagementPage() {
     try {
       const response = await productAPI.updateProduct(editingProduct, formData);
       if (response.success) {
-        toast.success('Cập nhật sản phẩm thành công!');
+        toast.success('Cập nhật lô thành công!');
         setEditingProduct(null);
-        setFormData({ name: '', origin: '', description: '', status: 'Produced', expiryDate: '' });
+        setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
         fetchProducts();
       } else {
-        toast.error(response.message || 'Không thể cập nhật sản phẩm');
+        if (isBatchNumberConflict(response.message)) {
+          applyNewBatchNumberOnConflict();
+          return;
+        }
+
+        toast.error(response.message || 'Không thể cập nhật lô');
       }
     } catch (error) {
       console.error('Error updating product:', error);
-      toast.error('Lỗi khi cập nhật sản phẩm');
+
+      if (isBatchNumberConflict(error?.message)) {
+        applyNewBatchNumberOnConflict();
+        return;
+      }
+
+      toast.error('Lỗi khi cập nhật lô');
     }
   };
 
   const handleDeleteProduct = async (productId) => {
-    if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
+    if (!confirm('Bạn có chắc muốn xóa lô này?')) return;
     
     try {
       const response = await productAPI.deleteProduct(productId);
       if (response.success) {
-        toast.success('Đã xóa sản phẩm');
+        toast.success('Đã xóa lô');
         setSelectedProduct(null);
         fetchProducts();
       } else {
-        toast.error(response.message || 'Không thể xóa sản phẩm');
+        toast.error(response.message || 'Không thể xóa lô');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
-      toast.error('Lỗi khi xóa sản phẩm');
+      toast.error('Lỗi khi xóa lô');
     }
   };
 
@@ -116,6 +166,9 @@ export default function ProductsManagementPage() {
     setEditingProduct(product.productId);
     setFormData({
       name: product.name,
+      batchNumber: product.batchNumber || '',
+      lotSize: product.lotSize || 1,
+      unit: product.unit || 'kg',
       origin: product.origin || '',
       description: product.description || '',
       status: product.status,
@@ -125,7 +178,7 @@ export default function ProductsManagementPage() {
 
   const handleCancelEdit = () => {
     setEditingProduct(null);
-    setFormData({ name: '', origin: '', description: '', status: 'Produced', expiryDate: '' });
+    setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
   };
 
   // Download QR Code as PNG
@@ -333,7 +386,7 @@ export default function ProductsManagementPage() {
       <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader className="w-12 h-12 animate-spin text-green-500 mx-auto mb-4" />
-          <p className="text-gray-600">Đang tải danh sách sản phẩm...</p>
+          <p className="text-gray-600">Đang tải danh sách lô...</p>
         </div>
       </div>
     );
@@ -344,15 +397,15 @@ export default function ProductsManagementPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-2">Quản lý sản phẩm</h1>
-          <p className="text-gray-600">Tổng số: {products.length} sản phẩm</p>
+          <h1 className="text-3xl mb-2">Quản lý lô sản xuất</h1>
+          <p className="text-gray-600">Tổng số: {products.length} lô</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Thêm sản phẩm mới
+          Thêm lô mới
         </button>
       </div>
 
@@ -365,7 +418,7 @@ export default function ProductsManagementPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-            placeholder="Tìm kiếm sản phẩm..."
+            placeholder="Tìm kiếm theo tên lô, mã lô, QR..."
           />
         </div>
       </div>
@@ -377,7 +430,7 @@ export default function ProductsManagementPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                  Sản phẩm
+                  Lô
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
                   Nhà sản xuất
@@ -402,13 +455,51 @@ export default function ProductsManagementPage() {
                       <form onSubmit={handleUpdateProduct} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium mb-1">Tên sản phẩm</label>
+                            <label className="block text-sm font-medium mb-1">Tên lô</label>
                             <input
                               type="text"
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
                               required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Mã lô</label>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={formData.batchNumber}
+                                onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                                placeholder="BMT-XXXXXXXX"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, batchNumber: buildRandomBatchCode() })}
+                                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                              >
+                                Ngẫu nhiên
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Số lượng</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={formData.lotSize}
+                              onChange={(e) => setFormData({ ...formData, lotSize: e.target.value })}
+                              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Đơn vị</label>
+                            <input
+                              type="text"
+                              value={formData.unit}
+                              onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
                             />
                           </div>
                           <div>
@@ -480,7 +571,7 @@ export default function ProductsManagementPage() {
                         </div>
                         <div>
                           <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-gray-600">{product.origin || 'N/A'}</p>
+                          <p className="text-sm text-gray-600">{product.batchNumber || 'NO-BATCH'} • {product.lotSize || 1} {product.unit || 'unit'}</p>
                         </div>
                       </div>
                     </td>
@@ -532,22 +623,22 @@ export default function ProductsManagementPage() {
         {filteredProducts.length === 0 && (
           <div className="p-12 text-center">
             <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-xl mb-2">Không tìm thấy sản phẩm</h3>
+            <h3 className="text-xl mb-2">Không tìm thấy lô</h3>
             <p className="text-gray-600">Thử tìm kiếm với từ khóa khác</p>
           </div>
         )}
       </div>
 
-      {/* Create Product Modal */}
+      {/* Create Batch Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-              <h3 className="text-xl font-semibold">Thêm sản phẩm mới</h3>
+              <h3 className="text-xl font-semibold">Thêm lô mới</h3>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
-                  setFormData({ name: '', origin: '', description: '', status: 'Produced', expiryDate: '' });
+                  setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
@@ -558,7 +649,7 @@ export default function ProductsManagementPage() {
             <form onSubmit={handleCreateProduct} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Tên sản phẩm <span className="text-red-500">*</span>
+                  Tên lô <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -568,6 +659,49 @@ export default function ProductsManagementPage() {
                   placeholder="VD: Cà phê Arabica Đà Lạt"
                   required
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Mã lô</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={formData.batchNumber}
+                      onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      placeholder="VD: BMT-X7K3P9Q2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, batchNumber: buildRandomBatchCode() })}
+                      className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                    >
+                      Ngẫu nhiên
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Số lượng</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.lotSize}
+                    onChange={(e) => setFormData({ ...formData, lotSize: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Đơn vị</label>
+                  <input
+                    type="text"
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    placeholder="kg/thùng/hộp"
+                  />
+                </div>
               </div>
 
               <div>
@@ -618,7 +752,7 @@ export default function ProductsManagementPage() {
 
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  💡 <strong>Lưu ý:</strong> Sản phẩm sẽ được gán cho người dùng hiện tại ({user?.username})
+                  💡 <strong>Lưu ý:</strong> Lô sẽ được gán cho người dùng hiện tại ({user?.username})
                 </p>
               </div>
 
@@ -627,13 +761,13 @@ export default function ProductsManagementPage() {
                   type="submit"
                   className="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  Tạo sản phẩm
+                  Tạo lô
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
-                    setFormData({ name: '', origin: '', description: '', status: 'Produced', expiryDate: '' });
+                    setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
                   }}
                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
@@ -645,12 +779,12 @@ export default function ProductsManagementPage() {
         </div>
       )}
 
-      {/* Product Detail Modal */}
+      {/* Batch Detail Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-              <h3 className="text-xl font-semibold">Chi tiết sản phẩm</h3>
+              <h3 className="text-xl font-semibold">Chi tiết lô</h3>
               <button
                 onClick={() => setSelectedProduct(null)}
                 className="p-2 hover:bg-gray-100 rounded-lg"
@@ -663,11 +797,19 @@ export default function ProductsManagementPage() {
               {/* Product Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium mb-4">Thông tin sản phẩm</h4>
+                  <h4 className="font-medium mb-4">Thông tin lô</h4>
                   <div className="space-y-3 text-sm">
                     <div>
-                      <span className="text-gray-600">Tên:</span>
+                      <span className="text-gray-600">Tên lô:</span>
                       <p className="font-medium">{selectedProduct.name}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Mã lô:</span>
+                      <p className="font-medium font-mono text-xs">{selectedProduct.batchNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Quy mô:</span>
+                      <p className="font-medium">{selectedProduct.lotSize || 1} {selectedProduct.unit || 'unit'}</p>
                     </div>
                     <div>
                       <span className="text-gray-600">Nơi sản xuất:</span>
@@ -734,6 +876,7 @@ export default function ProductsManagementPage() {
                     <code className="text-sm bg-white px-4 py-2 rounded">
                       {selectedProduct.qrCode}
                     </code>
+                    <p className="text-xs text-gray-500">Quét mã để truy xuất toàn bộ lô sản xuất.</p>
                     <div className="flex gap-3 mt-2">
                       <button
                         onClick={() => downloadQRCode(selectedProduct)}

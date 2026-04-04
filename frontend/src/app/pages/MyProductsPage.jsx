@@ -96,26 +96,26 @@ export default function MyProductsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl mb-2">San pham cua toi</h1>
-          <p className="text-gray-600">Quan ly san pham va chuoi cung ung</p>
+          <p className="text-gray-600">Quan ly lo san xuat va chuoi cung ung</p>
         </div>
         <button
           onClick={() => navigate('/create-product')}
           className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Tao san pham moi
+          Tao lo moi
         </button>
       </div>
 
       {myProducts.length === 0 ? (
         <div className="bg-white rounded-xl shadow text-center py-12">
           <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-xl mb-2">Chua co san pham nao</h3>
+          <h3 className="text-xl mb-2">Chua co lo nao</h3>
           <button
             onClick={() => navigate('/create-product')}
             className="mt-4 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
           >
-            Tao san pham moi
+            Tao lo moi
           </button>
         </div>
       ) : (
@@ -130,7 +130,7 @@ export default function MyProductsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg mb-1">{product.name}</h3>
-                      <p className="text-sm text-gray-600">{product.origin}</p>
+                      <p className="text-sm text-gray-600">{product.batchNumber || 'NO-BATCH'} • {product.lotSize || 1} {product.unit || 'unit'}</p>
                       <div className="flex gap-2 mt-2">
                         <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
                           {statusLabels[status] || status}
@@ -147,10 +147,22 @@ export default function MyProductsPage() {
 
                   <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Ma san pham:</span>
-                      <p className="font-medium font-mono text-xs">{product.productId}</p>
+                      <span className="text-gray-600">Ma lo:</span>
+                      <p className="font-medium font-mono text-xs">{product.batchNumber || 'N/A'}</p>
                     </div>
                     <div>
+                      <span className="text-gray-600">Ma dinh danh:</span>
+                      <p className="font-medium font-mono text-xs">{product.productId}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-600">Noi san xuat:</span>
+                      <p className="font-medium">{product.origin || 'Unknown'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-600">Quy mo:</span>
+                      <p className="font-medium">{product.lotSize || 1} {product.unit || 'unit'}</p>
+                    </div>
+                    <div className="col-span-2">
                       <span className="text-gray-600">Ngay tao:</span>
                       <p className="font-medium">{new Date(product.createdAt).toLocaleDateString('vi-VN')}</p>
                     </div>
