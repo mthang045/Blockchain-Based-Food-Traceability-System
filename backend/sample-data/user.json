@@ -1,0 +1,14 @@
+[
+  {
+    "id": "ObjectId",
+    "email": "user@example.com",
+    "password_hash": "hashedpassword",
+    "full_name": "Sample User",
+    "role": "STUDENT",
+    "avatar_url": "https://example.com/avatar.png",
+    "reset_token": "",
+    "reset_token_expires": "2026-03-16T00:00:00Z",
+    "created_at": "2026-03-15T00:00:00Z",
+    "updated_at": "2026-03-15T00:00:00Z"
+  }
+]

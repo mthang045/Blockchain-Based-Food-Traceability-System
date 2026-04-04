@@ -1,0 +1,15 @@
+[
+  {
+    "id": "ObjectId",
+    "user_id": "ObjectId",
+    "name": "Essay Submission",
+    "task_type": "ESSAY",
+    "prompt": "Write about your favorite subject.",
+    "content": "Math is my favorite subject because...",
+    "ai_score": 8.5,
+    "ai_criteria": {},
+    "ai_feedback": "Good structure and clarity.",
+    "created_at": "2026-03-15T00:00:00Z",
+    "graded_at": "2026-03-15T01:00:00Z"
+  }
+]

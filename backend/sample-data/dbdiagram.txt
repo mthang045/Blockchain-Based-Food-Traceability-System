@@ -1,0 +1,111 @@
+Table exam {
+  id ObjectId [pk]
+  title text
+  slug text
+  description text
+  tags array
+  author_id ObjectId
+  settings jsonb
+  published bool
+  scheduled_at timestamp
+  version int4
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table section {
+  id ObjectId [pk]
+  exam_id ObjectId [ref: > exam.id]
+  type section_type
+  title text
+  instructions text
+  position int4
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table question {
+  id ObjectId [pk]
+  section_id ObjectId [ref: > section.id]
+  type text
+  prompt text
+  points numeric
+  choices jsonb
+  media jsonb
+  legacy_id text
+  position int4
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table user {
+  id ObjectId [pk]
+  email text
+  password_hash text
+  full_name text
+  role user_role
+  avatar_url text
+  reset_token text
+  reset_token_expires timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table attempt {
+  id ObjectId [pk]
+  exam_id ObjectId [ref: > exam.id]
+  user_id ObjectId [ref: > user.id]
+  started_at timestamp
+  expires_at timestamp
+  submitted_at timestamp
+  answers jsonb
+  order array
+  score numeric
+  details jsonb
+  version int4
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table submission {
+  id ObjectId [pk]
+  user_id ObjectId [ref: > user.id]
+  name text
+  task_type text
+  prompt text
+  content text
+  ai_score numeric
+  ai_criteria jsonb
+  ai_feedback text
+  created_at timestamp
+  graded_at timestamp
+}
+
+Table lesson {
+  id ObjectId [pk]
+  title text
+  slug text
+  excerpt text
+  content text
+  author_id ObjectId
+  tags array
+  featured_image text
+  media jsonb
+  published bool
+  scheduled_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table userprogress {
+  id ObjectId [pk]
+  user_id ObjectId [ref: > user.id]
+  skill text
+  current_level numeric
+  target_score numeric
+  completed_exercises int4
+  total_time_spent int4
+  last_practiced_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}

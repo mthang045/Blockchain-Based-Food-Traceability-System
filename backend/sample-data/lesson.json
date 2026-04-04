@@ -1,0 +1,17 @@
+[
+  {
+    "id": "ObjectId",
+    "title": "Sample Lesson",
+    "slug": "sample-lesson",
+    "excerpt": "This is a sample lesson.",
+    "content": "Lesson content goes here.",
+    "author_id": "ObjectId",
+    "tags": ["math", "logic"],
+    "featured_image": "https://example.com/image.png",
+    "media": [],
+    "published": true,
+    "scheduled_at": "2026-03-15T00:00:00Z",
+    "created_at": "2026-03-15T00:00:00Z",
+    "updated_at": "2026-03-15T00:00:00Z"
+  }
+]

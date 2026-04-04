@@ -13,11 +13,11 @@ const DEFAULT_FORM = {
 };
 
 const roleLabels = {
-  ADMIN: 'Quan tri vien',
-  MANUFACTURER: 'Nha san xuat',
-  TRANSPORTER: 'Nha van chuyen',
-  STORE: 'Cua hang',
-  CONSUMER: 'Nguoi tieu dung',
+  ADMIN: 'Quản trị viên',
+  MANUFACTURER: 'Nhà sản xuất',
+  TRANSPORTER: 'Nhà vận chuyển',
+  STORE: 'Cửa hàng',
+  CONSUMER: 'Người tiêu dùng',
 };
 
 const roleColors = {
@@ -45,7 +45,7 @@ export default function UsersManagementPage() {
         setUsers(response.data || []);
       }
     } catch (error) {
-      toast.error(error.message || 'Khong the tai danh sach nguoi dung');
+      toast.error(error.message || 'Không thể tải danh sách người dùng');
     } finally {
       setLoading(false);
     }
@@ -78,15 +78,15 @@ export default function UsersManagementPage() {
 
       const response = await authAPI.createUser(payload);
       if (response.success) {
-        toast.success('Them nguoi dung thanh cong');
+        toast.success('Thêm người dùng thành công');
         setShowAddUser(false);
         setFormData(DEFAULT_FORM);
         await fetchUsers();
       } else {
-        toast.error(response.message || 'Khong the them nguoi dung');
+        toast.error(response.message || 'Không thể thêm người dùng');
       }
     } catch (error) {
-      toast.error(error.message || 'Khong the them nguoi dung');
+      toast.error(error.message || 'Không thể thêm người dùng');
     }
   };
 
@@ -115,31 +115,31 @@ export default function UsersManagementPage() {
 
       const response = await authAPI.updateUser(editingUserId, payload);
       if (response.success) {
-        toast.success('Cap nhat nguoi dung thanh cong');
+        toast.success('Cập nhật người dùng thành công');
         setEditingUserId(null);
         setEditFormData(DEFAULT_FORM);
         await fetchUsers();
       } else {
-        toast.error(response.message || 'Khong the cap nhat nguoi dung');
+        toast.error(response.message || 'Không thể cập nhật người dùng');
       }
     } catch (error) {
-      toast.error(error.message || 'Khong the cap nhat nguoi dung');
+      toast.error(error.message || 'Không thể cập nhật người dùng');
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!confirm('Ban co chac muon xoa nguoi dung nay?')) return;
+    if (!confirm('Bạn có chắc muốn xóa người dùng này?')) return;
 
     try {
       const response = await authAPI.deleteUser(userId);
       if (response.success) {
-        toast.success('Da xoa nguoi dung');
+        toast.success('Đã xóa người dùng');
         await fetchUsers();
       } else {
-        toast.error(response.message || 'Khong the xoa nguoi dung');
+        toast.error(response.message || 'Không thể xóa người dùng');
       }
     } catch (error) {
-      toast.error(error.message || 'Khong the xoa nguoi dung');
+      toast.error(error.message || 'Không thể xóa người dùng');
     }
   };
 
@@ -155,7 +155,7 @@ export default function UsersManagementPage() {
     <div className="max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl mb-2">Quan ly nguoi dung</h1>
+          <h1 className="text-3xl mb-2">Quản lý người dùng</h1>
           <p className="text-gray-600">Tong so: {users.length} nguoi dung</p>
         </div>
         <button
@@ -163,20 +163,20 @@ export default function UsersManagementPage() {
           className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Them nguoi dung
+          Thêm người dùng
         </button>
       </div>
 
       {showAddUser && (
         <div className="bg-white rounded-xl shadow p-6 mb-6">
-          <h3 className="text-lg mb-4">Them nguoi dung moi</h3>
+          <h3 className="text-lg mb-4">Thêm người dùng mới</h3>
           <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              placeholder="Ten dang nhap"
+              placeholder="Tên đăng nhập"
               required
             />
             <input
@@ -192,7 +192,7 @@ export default function UsersManagementPage() {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              placeholder="Mat khau"
+              placeholder="Mật khẩu"
               required
             />
             <select
@@ -200,18 +200,18 @@ export default function UsersManagementPage() {
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             >
-              <option value="CONSUMER">Nguoi tieu dung</option>
-              <option value="MANUFACTURER">Nha san xuat</option>
-              <option value="TRANSPORTER">Nha van chuyen</option>
-              <option value="STORE">Cua hang</option>
-              <option value="ADMIN">Quan tri vien</option>
+              <option value="CONSUMER">Người tiêu dùng</option>
+              <option value="MANUFACTURER">Nhà sản xuất</option>
+              <option value="TRANSPORTER">Nhà vận chuyển</option>
+              <option value="STORE">Cửa hàng</option>
+              <option value="ADMIN">Quản trị viên</option>
             </select>
             <input
               type="text"
               value={formData.company}
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              placeholder="Cong ty"
+              placeholder="Công ty"
             />
             <input
               type="text"
@@ -226,10 +226,10 @@ export default function UsersManagementPage() {
                 onClick={() => setShowAddUser(false)}
                 className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Huy
+                Hủy
               </button>
               <button type="submit" className="flex-1 px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-                Them nguoi dung
+                Thêm người dùng
               </button>
             </div>
           </form>
@@ -244,7 +244,7 @@ export default function UsersManagementPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg"
-            placeholder="Tim kiem theo ten hoac email"
+            placeholder="Tìm kiếm theo tên hoặc email"
           />
         </div>
       </div>
@@ -253,7 +253,7 @@ export default function UsersManagementPage() {
         <div className="bg-white rounded-xl shadow p-6 mb-6 border-2 border-blue-500">
           <h3 className="text-lg mb-4 flex items-center gap-2">
             <Edit className="w-5 h-5 text-blue-600" />
-            Chinh sua nguoi dung
+            Chỉnh sửa người dùng
           </h3>
           <form onSubmit={handleSaveEdit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
@@ -275,18 +275,18 @@ export default function UsersManagementPage() {
               onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             >
-              <option value="CONSUMER">Nguoi tieu dung</option>
-              <option value="MANUFACTURER">Nha san xuat</option>
-              <option value="TRANSPORTER">Nha van chuyen</option>
-              <option value="STORE">Cua hang</option>
-              <option value="ADMIN">Quan tri vien</option>
+              <option value="CONSUMER">Người tiêu dùng</option>
+              <option value="MANUFACTURER">Nhà sản xuất</option>
+              <option value="TRANSPORTER">Nhà vận chuyển</option>
+              <option value="STORE">Cửa hàng</option>
+              <option value="ADMIN">Quản trị viên</option>
             </select>
             <input
               type="text"
               value={editFormData.company}
               onChange={(e) => setEditFormData({ ...editFormData, company: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              placeholder="Cong ty"
+              placeholder="Công ty"
             />
             <input
               type="text"
@@ -301,10 +301,10 @@ export default function UsersManagementPage() {
                 onClick={() => setEditingUserId(null)}
                 className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Huy
+                Hủy
               </button>
               <button type="submit" className="flex-1 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                Luu thay doi
+                Lưu thay đổi
               </button>
             </div>
           </form>
@@ -316,11 +316,11 @@ export default function UsersManagementPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Nguoi dung</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Vai tro</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Cong ty</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Ngay tao</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Hanh dong</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Người dùng</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Vai trò</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Công ty</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Ngày tạo</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -356,8 +356,8 @@ export default function UsersManagementPage() {
         {filteredUsers.length === 0 && (
           <div className="p-12 text-center">
             <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-xl mb-2">Khong tim thay nguoi dung</h3>
-            <p className="text-gray-600">Thu tim kiem voi tu khoa khac</p>
+            <h3 className="text-xl mb-2">Không tìm thấy người dùng</h3>
+            <p className="text-gray-600">Thử tìm kiếm với từ khóa khác</p>
           </div>
         )}
       </div>

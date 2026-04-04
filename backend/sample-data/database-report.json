@@ -1,0 +1,236 @@
+{
+  "organizations": [
+    {
+      "organizationId": "ORG-2026-DALAT-001",
+      "name": "Dalat Fresh Farm",
+      "type": "FARM",
+      "description": "Organic farm in Dalat highlands specializing in fresh vegetables and fruits",
+      "walletAddress": "0x7fD311e28443fdF8A2027E81713Be04386081DAc",
+      "address": {
+        "street": "123 Highland Road, Ward 4",
+        "city": "Dalat",
+        "state": "Lam Dong",
+        "postalCode": "670000",
+        "country": "Vietnam"
+      },
+      "contact": {
+        "name": "Nguyen Van A",
+        "phone": "+84 912 345 678",
+        "email": "contact@dalatfarm.vn",
+        "position": "Farm Director"
+      },
+      "licenses": [
+        {
+          "licenseNumber": "VFA-DALAT-2026-001",
+          "licenseType": "Organic Farming Certificate",
+          "issueDate": "2026-01-01",
+          "expiryDate": "2027-01-01",
+          "issuingAuthority": "Vietnam Food Administration",
+          "isValid": true
+        }
+      ],
+      "taxId": "0123456789",
+      "certifications": [
+        {
+          "name": "GlobalGAP",
+          "issuedBy": "GlobalG.A.P. c/o FoodPLUS GmbH",
+          "issuedDate": "2025-06-01",
+          "expiryDate": "2026-06-01",
+          "certificateUrl": "https://ipfs.io/ipfs/QmCert123..."
+        }
+      ],
+      "isVerified": true,
+      "isActive": true,
+      "rating": 4.8,
+      "totalProducts": 156,
+      "totalTransactions": 423,
+      "metadata": {
+        "website": "https://dalatfarm.vn",
+        "logoUrl": "https://ipfs.io/ipfs/QmLogo123...",
+        "socialMedia": {
+          "facebook": "https://facebook.com/dalatfarm",
+          "twitter": "@dalatfarm"
+        }
+      },
+      "createdAt": "2026-01-15",
+      "updatedAt": "2026-03-12"
+    },
+    {
+      "organizationId": "ORG-2026-HCM-DIST-001",
+      "name": "HCM Distribution Center",
+      "type": "DISTRIBUTOR",
+      "description": "Major food distribution hub in Ho Chi Minh City",
+      "walletAddress": "0x8eE421E235C5A77F75ab951B16AB2E9ad37ddA12",
+      "address": {
+        "street": "456 Distribution Avenue, District 7",
+        "city": "Ho Chi Minh City",
+        "state": "Ho Chi Minh",
+        "postalCode": "700000",
+        "country": "Vietnam"
+      },
+      "contact": {
+        "name": "Tran Thi B",
+        "phone": "+84 909 876 543",
+        "email": "contact@hcmdist.vn",
+        "position": "Operations Manager"
+      },
+      "licenses": [
+        {
+          "licenseNumber": "VFA-HCM-2026-002",
+          "licenseType": "Food Distribution License",
+          "issueDate": "2026-01-10",
+          "expiryDate": "2027-01-10",
+          "issuingAuthority": "HCMC Food Safety Department",
+          "isValid": true
+        }
+      ],
+      "taxId": "9876543210",
+      "certifications": [],
+      "isVerified": true,
+      "isActive": true,
+      "rating": 4.5,
+      "totalProducts": 890,
+      "totalTransactions": 1250,
+      "metadata": {
+        "website": "https://hcmdist.vn",
+        "logoUrl": "https://ipfs.io/ipfs/QmLogo456..."
+      },
+      "createdAt": "2026-01-20",
+      "updatedAt": "2026-03-12"
+    },
+    {
+      "organizationId": "ORG-2026-COOPMART-001",
+      "name": "Co.op Mart Supermarket",
+      "type": "RETAILER",
+      "description": "Leading retail supermarket chain in Vietnam",
+      "walletAddress": "0x3456789012345678901234567890123456789012",
+      "address": {
+        "street": "789 Nguyen Van Linh, District 7",
+        "city": "Ho Chi Minh City",
+        "state": "Ho Chi Minh",
+        "postalCode": "700000",
+        "country": "Vietnam"
+      },
+      "contact": {
+        "name": "Le Van C",
+        "phone": "+84 908 765 432",
+        "email": "contact@coopmart.vn",
+        "position": "Store Manager"
+      },
+      "licenses": [
+        {
+          "licenseNumber": "RETAIL-HCM-2026-001",
+          "licenseType": "Retail Food Sales License",
+          "issueDate": "2026-02-01",
+          "expiryDate": "2027-02-01",
+          "issuingAuthority": "HCMC Department of Trade",
+          "isValid": true
+        }
+      ],
+      "taxId": "5555555555",
+      "certifications": [],
+      "isVerified": true,
+      "isActive": true,
+      "rating": 4.7,
+      "totalProducts": 2340,
+      "totalTransactions": 5678,
+      "metadata": {
+        "website": "https://coopmart.vn",
+        "logoUrl": "https://ipfs.io/ipfs/QmLogo789..."
+      },
+      "createdAt": "2026-02-10",
+      "updatedAt": "2026-03-12"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@foodtrace.vn",
+      "role": "ADMIN",
+      "walletAddress": "0x1234567890123456789012345678901234567890",
+      "company": "Food Traceability HQ",
+      "isActive": true,
+      "createdAt": "2026-01-01",
+      "updatedAt": "2026-01-01"
+    },
+    {
+      "username": "dalat_farm",
+      "email": "producer@dalatfarm.vn",
+      "role": "MANUFACTURER",
+      "walletAddress": "0x7fD311e28443fdF8A2027E81713Be04386081DAc",
+      "company": "Dalat Fresh Farm",
+      "isActive": true,
+      "createdAt": "2026-01-15",
+      "updatedAt": "2026-01-15"
+    },
+    {
+      "username": "hcm_logistics",
+      "email": "transport@hcmlogistics.vn",
+      "role": "TRANSPORTER",
+      "walletAddress": "0x2345678901234567890123456789012345678901",
+      "company": "HCM Fast Logistics",
+      "isActive": true,
+      "createdAt": "2026-02-01",
+      "updatedAt": "2026-02-01"
+    },
+    {
+      "username": "coopmart_store",
+      "email": "store@coopmart.vn",
+      "role": "STORE",
+      "walletAddress": "0x3456789012345678901234567890123456789012",
+      "company": "Co.op Mart",
+      "isActive": true,
+      "createdAt": "2026-02-10",
+      "updatedAt": "2026-02-10"
+    },
+    {
+      "username": "consumer01",
+      "email": "consumer@example.vn",
+      "role": "CONSUMER",
+      "walletAddress": null,
+      "company": null,
+      "isActive": true,
+      "createdAt": "2026-03-01",
+      "updatedAt": "2026-03-01"
+    },
+    {
+      "username": "Bùi Minh Thắng",
+      "email": "Buiminhthang834@gmail.com",
+      "role": "ADMIN",
+      "company": "hcm",
+      "isActive": true,
+      "createdAt": "2026-03-12",
+      "updatedAt": "2026-03-12"
+    }
+  ],
+  "products": [
+    {
+      "productId": "PROD-1773422328192-P5R8S4",
+      "name": "Cà phê ARE",
+      "category": "FOOD",
+      "producer": {
+        "name": "Bùi Minh Thắng",
+        "address": "69b247f2651e4a5318d670ae",
+        "userId": "69b247f2651e4a5318d670ae"
+      },
+      "status": "Produced",
+      "history": [
+        {
+          "actor": "Bùi Minh Thắng",
+          "action": "Status changed to Produced",
+          "timestamp": "2026-03-13T17:18:48.193Z",
+          "location": "Đồng Nai",
+          "notes": "Product created"
+        }
+      ],
+      "qrCode": "FOODCHAIN-PROD-1773422328192-P5R8S4",
+      "origin": "Đồng Nai",
+      "expiryDate": "2026-03-29",
+      "createdAt": "2026-03-13",
+      "updatedAt": "2026-03-13"
+    }
+  ],
+  "qrcodes": [],
+  "blockchainlogs": [],
+  "transactions": []
+}

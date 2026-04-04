@@ -1,0 +1,14 @@
+[
+  {
+    "id": "ObjectId",
+    "transactionId": "TRANS-001",
+    "productId": "PROD-1773422328192-P5R8S4",
+    "senderId": "ObjectId",
+    "receiverId": "ObjectId",
+    "status": "Completed",
+    "timestamp": "2026-03-13T17:18:48.393Z",
+    "notes": "Product transferred",
+    "createdAt": "2026-03-13T17:18:48.393Z",
+    "updatedAt": "2026-03-13T17:18:48.393Z"
+  }
+]

@@ -1,0 +1,80 @@
+Table organizations {
+  id ObjectId [pk]
+  organizationId text
+  name text
+  type text
+  description text
+  walletAddress text
+  address jsonb
+  contact jsonb
+  licenses jsonb
+  taxId text
+  certifications jsonb
+  isVerified bool
+  isActive bool
+  rating numeric
+  totalProducts int4
+  totalTransactions int4
+  metadata jsonb
+  createdAt timestamp
+  updatedAt timestamp
+}
+
+Table users {
+  id ObjectId [pk]
+  username text
+  email text
+  password text
+  role text
+  walletAddress text
+  company text
+  isActive bool
+  createdAt timestamp
+  updatedAt timestamp
+}
+
+Table products {
+  id ObjectId [pk]
+  productId text
+  name text
+  description text
+  category text
+  producerId ObjectId [ref: > organizations.id]
+  status text
+  history jsonb
+  qrCode text
+  origin text
+  expiryDate timestamp
+  createdAt timestamp
+  updatedAt timestamp
+}
+
+Table qrcodes {
+  id ObjectId [pk]
+  qrCode text
+  productId text [ref: > products.productId]
+  createdAt timestamp
+  updatedAt timestamp
+}
+
+Table blockchainlogs {
+  id ObjectId [pk]
+  logType text
+  logData jsonb
+  transactionId text [ref: > transactions.transactionId]
+  createdAt timestamp
+  updatedAt timestamp
+}
+
+Table transactions {
+  id ObjectId [pk]
+  transactionId text
+  productId text [ref: > products.productId]
+  senderId ObjectId [ref: > users.id]
+  receiverId ObjectId [ref: > users.id]
+  status text
+  timestamp timestamp
+  notes text
+  createdAt timestamp
+  updatedAt timestamp
+}
