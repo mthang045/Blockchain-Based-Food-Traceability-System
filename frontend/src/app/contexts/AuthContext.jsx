@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/apiService';
+import { clearCachedSigningPrivateKey } from '../services/txSigningClient';
 
 const AuthContext = createContext(undefined);
 
@@ -15,6 +16,7 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('refresh_token');
+    clearCachedSigningPrivateKey();
   };
 
   useEffect(() => {

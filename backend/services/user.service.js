@@ -1,8 +1,86 @@
 const User = require('../models/User.model');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const {
+  normalizeWalletAddress,
+  getDevWalletPool,
+  pickAvailableWallet
+} = require('../utils/devWalletPool');
 
 const normalizeRole = (role = 'CONSUMER') => String(role).toUpperCase();
+const TRANSACTION_ROLES = new Set(['ADMIN', 'MANUFACTURER', 'TRANSPORTER', 'STORE']);
+
+const isTransactionalRole = (role) => TRANSACTION_ROLES.has(normalizeRole(role));
+
+const getUsedWalletSet = async () => {
+  const usersWithWallet = await User.find({
+    walletAddress: { $exists: true, $nin: [null, ''] }
+  }).select('walletAddress');
+
+  const usedWallets = new Set();
+  for (const user of usersWithWallet) {
+    const normalized = normalizeWalletAddress(user.walletAddress);
+    if (normalized) {
+      usedWallets.add(normalized.toLowerCase());
+    }
+  }
+
+  return usedWallets;
+};
+
+const ensureWalletUnique = async (walletAddress, excludeUserId = null) => {
+  if (!walletAddress) {
+    return;
+  }
+
+  const query = {
+    walletAddress: { $regex: `^${walletAddress}$`, $options: 'i' }
+  };
+
+  if (excludeUserId) {
+    query._id = { $ne: excludeUserId };
+  }
+
+  const existingWalletOwner = await User.findOne(query).select('_id');
+  if (existingWalletOwner) {
+    throw new Error('Wallet address is already assigned to another account.');
+  }
+};
+
+const allocateWalletFromDevPool = async () => {
+  const pool = getDevWalletPool();
+  if (!pool.length) {
+    return null;
+  }
+
+  const usedWallets = await getUsedWalletSet();
+  return pickAvailableWallet(usedWallets, pool);
+};
+
+const resolveWalletAddressForCreate = async ({ role, walletAddress }) => {
+  const normalizedWallet = normalizeWalletAddress(walletAddress);
+  if (normalizedWallet) {
+    await ensureWalletUnique(normalizedWallet);
+    return normalizedWallet;
+  }
+
+  const assignedWallet = await allocateWalletFromDevPool();
+  if (assignedWallet) {
+    return assignedWallet;
+  }
+
+  if (isTransactionalRole(role)) {
+    throw new Error('Transactional roles require walletAddress. No available address in DEV_WALLET_POOL.');
+  }
+
+  return null;
+};
+
+const assertRoleWalletRequirement = (role, walletAddress) => {
+  if (isTransactionalRole(role) && !walletAddress) {
+    throw new Error('walletAddress is required for transactional roles: ADMIN, MANUFACTURER, TRANSPORTER, STORE.');
+  }
+};
 
 const getAccessTokenSecret = () => process.env.JWT_SECRET || 'your_jwt_secret';
 const getAccessTokenExpiry = () => process.env.JWT_EXPIRES_IN || '7d';
@@ -69,6 +147,14 @@ const issueSessionTokens = async (user) => {
 // Register new user
 const registerUser = async (userData) => {
   try {
+    const normalizedRole = normalizeRole(userData.role);
+    const resolvedWalletAddress = await resolveWalletAddressForCreate({
+      role: normalizedRole,
+      walletAddress: userData.walletAddress
+    });
+
+    assertRoleWalletRequirement(normalizedRole, resolvedWalletAddress);
+
     // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email: userData.email }, { username: userData.username }]
@@ -81,7 +167,8 @@ const registerUser = async (userData) => {
     // Create new user
     const user = new User({
       ...userData,
-      role: normalizeRole(userData.role)
+      role: normalizedRole,
+      walletAddress: resolvedWalletAddress || undefined
     });
     await user.save();
     
@@ -143,10 +230,23 @@ const getAllUsers = async () => {
 
 const updateProfile = async (userId, updates) => {
   try {
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      throw new Error('User not found');
+    }
+
+    const hasWalletInPayload = Object.prototype.hasOwnProperty.call(updates, 'walletAddress');
+    const normalizedWallet = hasWalletInPayload
+      ? normalizeWalletAddress(updates.walletAddress)
+      : normalizeWalletAddress(currentUser.walletAddress);
+
+    assertRoleWalletRequirement(currentUser.role, normalizedWallet);
+    await ensureWalletUnique(normalizedWallet, userId);
+
     const allowedUpdates = {
       username: updates.username,
       company: updates.company,
-      walletAddress: updates.walletAddress
+      walletAddress: hasWalletInPayload ? normalizedWallet : undefined
     };
 
     Object.keys(allowedUpdates).forEach((key) => {
@@ -171,12 +271,26 @@ const createUser = async (userData) => {
 
 const updateUser = async (userId, updates) => {
   try {
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return null;
+    }
+
+    const nextRole = updates.role ? normalizeRole(updates.role) : normalizeRole(currentUser.role);
+    const hasWalletInPayload = Object.prototype.hasOwnProperty.call(updates, 'walletAddress');
+    const nextWalletAddress = hasWalletInPayload
+      ? normalizeWalletAddress(updates.walletAddress)
+      : normalizeWalletAddress(currentUser.walletAddress);
+
+    assertRoleWalletRequirement(nextRole, nextWalletAddress);
+    await ensureWalletUnique(nextWalletAddress, userId);
+
     const allowedUpdates = {
       username: updates.username,
       email: updates.email,
-      role: updates.role ? normalizeRole(updates.role) : undefined,
+      role: updates.role ? nextRole : undefined,
       company: updates.company,
-      walletAddress: updates.walletAddress,
+      walletAddress: hasWalletInPayload ? nextWalletAddress : undefined,
       isActive: updates.isActive
     };
 

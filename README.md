@@ -1,263 +1,100 @@
-# 🍃 Hệ Thống Truy Xuất Nguồn Gốc Thực Phẩm Trên Nền Tảng Blockchain
+# FoodChain - Blockchain Food Traceability
 
-## 📋 Giới Thiệu
+Hệ thống truy xuất nguồn gốc thực phẩm dùng React, Node.js, MongoDB và Ganache/Ethereum local chain. Ứng dụng hỗ trợ phân quyền theo vai trò, quản lý sản phẩm, theo dõi vận chuyển, quét QR, blockchain logs và dashboard riêng cho từng role.
 
-Dự án xây dựng hệ thống truy xuất nguồn gốc thực phẩm sử dụng công nghệ Blockchain nhằm đảm bảo tính minh bạch, an toàn và tin cậy trong chuỗi cung ứng thực phẩm. Hệ thống cho phép người tiêu dùng tra cứu thông tin đầy đủ về nguồn gốc, quy trình sản xuất và vận chuyển của sản phẩm thực phẩm thông qua mã QR.
+## Tính năng chính
 
-### 🎯 Mục Tiêu
+- Đăng ký/đăng nhập JWT với walletAddress cho tài khoản
+- Tự gán walletAddress cho user dev từ pool ví Ganache
+- Dashboard riêng cho ADMIN, MANUFACTURER, TRANSPORTER, STORE, CONSUMER
+- Tạo lô sản phẩm, cập nhật vận chuyển, nhận hàng tại cửa hàng
+- Lịch sử hành trình sản phẩm và blockchain logs
+- Quét QR, tra cứu nguồn gốc, xem chi tiết trạng thái sản phẩm
+- Code-split route và dashboard theo role để giảm bundle
 
-- Tăng cường tính minh bạch trong chuỗi cung ứng thực phẩm
-- Đảm bảo tính bất biến của dữ liệu thông qua công nghệ blockchain
-- Giúp người tiêu dùng dễ dàng xác minh nguồn gốc thực phẩm
-- Hỗ trợ quản lý và theo dõi sản phẩm cho các bên liên quan
+## Cấu trúc chính
 
-## ✨ Tính Năng Chính
+- [backend/](backend) - Express API, MongoDB models, blockchain service
+- [frontend/](frontend) - React + Vite app
+- [docker-compose.yml](docker-compose.yml) - Tùy chọn chạy bằng container
 
-### 🔐 Xác Thực & Phân Quyền
-- ✅ Đăng nhập/Đăng ký với JWT authentication
-- ✅ Quản lý profile người dùng với wallet address
-- ✅ Phân quyền theo vai trò: ADMIN, MANUFACTURER, TRANSPORTER, STORE, CONSUMER
-- ✅ Bảo mật với bcrypt password hashing
+## Chạy local, không dùng Docker
 
-### 📦 Quản Lý Sản Phẩm
-- ✅ **Tạo sản phẩm mới**: Nhập thông tin chi tiết (tên, xuất xứ, hạn sử dụng, ghi chú)
-- ✅ **Quản lý sản phẩm**: Xem, sửa, xóa sản phẩm (Admin & Manufacturer)
-- ✅ **Trạng thái sản phẩm**: Produced, InTransit, Delivered
-- ✅ **Quản lý người dùng**: (Admin) CRUD operations cho user accounts
-- ✅ **QR Code tự động**: Mỗi sản phẩm có QR code unique
+### Yêu cầu
 
-### 🚚 Chuỗi Cung Ứng
-- ✅ **Theo dõi vận chuyển**: Cập nhật trạng thái theo thời gian thực
-- ✅ **Lịch sử blockchain**: Xem toàn bộ transaction history với blockchain hash
-- ✅ **Quản lý quy trình**: Theo dõi từng bước trong supply chain
-- ✅ **Smart Contract Integration**: Ghi nhận mọi thay đổi lên Ethereum blockchain
+- Node.js 18+
+- MongoDB đang chạy local
+- Ganache đang chạy local trên cổng `7545`
 
-### 📱 Truy Xuất Nguồn Gốc & QR Code
-- ✅ **Quét QR bằng camera**: Sử dụng camera sau để quét mã QR (html5-qrcode)
-- ✅ **Nhập mã thủ công**: Chế độ nhập QR code bằng bàn phím
-- ✅ **Tải xuống QR Code**: Download QR code dưới dạng PNG (400x400px)
-- ✅ **In nhãn dán QR**: In QR code với template chuyên nghiệp
-- ✅ **Xác minh blockchain**: Kiểm tra transaction hash và block number
-- ✅ **Lịch sử đầy đủ**: Timeline chi tiết từ sản xuất đến người tiêu dùng
-
-### 📊 Dashboard & Báo Cáo
-- ✅ Tổng quan thống kê: Tổng sản phẩm, người dùng, giao dịch
-- ✅ Biểu đồ phân tích: Product status distribution
-- ✅ Recent activities và blockchain logs
-- ✅ Role-based dashboard views
-
-## 🛠️ Công Nghệ Sử Dụng
-
-### Backend (Node.js)
-- **Node.js 18+** - JavaScript runtime
-- **Express.js** - Web framework
-- **MongoDB** - NoSQL database
-- **Mongoose** - MongoDB ODM
-- **JWT (jsonwebtoken)** - Authentication & authorization
-- **bcrypt** - Password hashing
-- **Web3.js** - Ethereum blockchain interaction
-- **ethers.js** - Ethereum library
-- **CORS** - Cross-Origin Resource Sharing
-- **dotenv** - Environment variables management
-
-### Frontend (React)
-- **React 18.3.1** - Thư viện UI hiện đại
-- **JavaScript (ES6+)** - Ngôn ngữ lập trình
-- **Vite 6.3.5** - Build tool nhanh và tối ưu
-- **React Router 7.13.0** - Client-side routing
-- **Tailwind CSS 4.1.12** - Utility-first CSS framework
-
-### UI Components & Libraries
-- **Material-UI (MUI) 7.3.5** - Component library chính
-- **Radix UI** - Accessible component primitives
-- **Recharts 2.15.2** - Biểu đồ và data visualization
-- **Lucide React** - Beautiful icon library
-- **React QR Code 2.0.18** - QR code generator
-- **html5-qrcode** - QR code scanner với camera
-- **Sonner** - Toast notifications elegant
-
-### Form & Utilities
-- **React Hook Form 7.55.0** - Form management
-- **Date-fns 3.6.0** - Date manipulation
-- **clsx** - Conditional className utility
-- **Canvas API** - QR code download (SVG to PNG)
-
-### Blockchain
-- **Ethereum** - Blockchain platform
-- **Ganache** - Local Ethereum blockchain for development
-- **Solidity** - Smart contract programming language
-- **Truffle/Hardhat** - Smart contract development framework
-- **Web3.js/Ethers.js** - Blockchain interaction libraries
-
-### DevOps & Tools
-- **Docker** - Containerization
-- **Git** - Version control
-- **Postman/Thunder Client** - API testing
-- **MongoDB Atlas** - Cloud database (production)
-
-## 📁 Cấu Trúc Dự Án
-
-```
-Blockchain_Nhom13/
-├── backend/                      # Node.js Express Backend
-│   ├── config/                   # Configuration files
-│   │   └── database.js          # MongoDB connection config
-│   ├── contracts/               # Smart Contracts (Solidity)
-│   │   ├── FoodSupplyChain.sol # Main smart contract
-│   │   └── build/              # Compiled contracts
-│   ├── controllers/             # Request handlers
-│   │   ├── auth.controller.js  # Authentication logic
-│   │   ├── product.controller.js # Product CRUD operations
-│   │   └── user.controller.js  # User management
-│   ├── middleware/              # Express middlewares
-│   │   ├── auth.middleware.js  # JWT verification
-│   │   └── errorHandler.js     # Error handling
-│   ├── models/                  # Mongoose schemas
-│   │   ├── User.model.js       # User schema
-│   │   ├── Product.model.js    # Product schema
-│   │   └── Transaction.model.js # Blockchain transaction
-│   ├── routes/                  # API routes
-│   │   ├── auth.routes.js      # Auth endpoints
-│   │   ├── product.routes.js   # Product endpoints
-│   │   └── user.routes.js      # User endpoints
-│   ├── services/                # Business logic layer
-│   │   ├── blockchain.service.js # Blockchain interaction
-│   │   ├── product.service.js  # Product operations
-│   │   └── auth.service.js     # Authentication
-│   ├── utils/                   # Utility functions
-│   │   ├── logger.js           # Logging utility
-│   │   └── validators.js       # Input validation
-│   ├── .env                     # Environment variables
-│   ├── server.js               # Main entry point
-│   ├── package.json            # Dependencies
-│   └── Dockerfile              # Docker configuration
-│
-├── frontend/                    # React Frontend
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── components/     # Reusable components
-│   │   │   │   ├── figma/     # Figma design components
-│   │   │   │   ├── layout/    # Layout components
-│   │   │   │   │   └── DashboardLayout.jsx
-│   │   │   │   └── ui/        # UI primitives (shadcn/ui)
-│   │   │   │       ├── button.tsx
-│   │   │   │       ├── card.tsx
-│   │   │   │       ├── dialog.tsx
-│   │   │   │       └── ... (40+ components)
-│   │   │   ├── contexts/      # React Context providers
-│   │   │   │   └── AuthContext.jsx # Auth state management
-│   │   │   ├── pages/         # Page components
-│   │   │   │   ├── BlockchainLogsPage.jsx # Blockchain history
-│   │   │   │   ├── CreateProductPage.jsx  # Create product form
-│   │   │   │   ├── DashboardPage.jsx      # Main dashboard
-│   │   │   │   ├── LoginPage.jsx          # Login/Register
-│   │   │   │   ├── MyProductsPage.jsx     # Manufacturer products
-│   │   │   │   ├── ProductsManagementPage.jsx # Admin CRUD
-│   │   │   │   ├── ProfilePage.jsx        # User profile
-│   │   │   │   ├── ScanQRPage.jsx         # QR scanner with camera
-│   │   │   │   ├── StoreProductsPage.jsx  # Store inventory
-│   │   │   │   ├── TransportPage.jsx      # Transport tracking
-│   │   │   │   └── UsersManagementPage.jsx # Admin user CRUD
-│   │   │   ├── services/      # API client services
-│   │   │   │   ├── apiService.js # Axios instance & API calls
-│   │   │   │   ├── blockchain.js # Blockchain queries
-│   │   │   │   └── storage.js # LocalStorage utilities
-│   │   │   ├── App.jsx        # Root component
-│   │   │   ├── routes.jsx     # Route configuration
-│   │   │   └── types.js       # Type definitions
-│   │   └── styles/            # Global styles
-│   │       ├── fonts.css
-│   │       ├── index.css
-│   │       ├── tailwind.css
-│   │       └── theme.css
-│   ├── public/                # Static assets
-│   ├── package.json           # Frontend dependencies
-│   ├── vite.config.js        # Vite configuration
-│   ├── postcss.config.mjs    # PostCSS config
-│   └── Dockerfile            # Frontend Docker config
-│
-├── docker-compose.yml         # Multi-container setup
-├── .gitignore                # Git ignore rules
-├── QUICKSTART.md             # Quick setup guide
-└── README.md                 # Project documentation
-```
-
-## 🚀 Cài Đặt
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── components/         # Các components tái sử dụng
-│   │   │   │   ├── figma/         # Components từ Figma
-│   │   │   │   ├── layout/        # Layout components
-│   │   │   │   └── ui/            # UI components (buttons, cards, etc.)
-│   │   │   ├── contexts/          # React contexts
-│   │   │   │   └── AuthContext.jsx
-│   │   │   ├── pages/             # Các trang chính
-│   │   │   │   ├── BlockchainLogsPage.jsx
-│   │   │   │   ├── CreateProductPage.jsx
-│   │   │   │   ├── DashboardPage.jsx
-│   │   │   │   ├── LoginPage.jsx
-│   │   │   │   ├── MyProductsPage.jsx
-│   │   │   │   ├── ProductsManagementPage.jsx
-│   │   │   │   ├── ProfilePage.jsx
-│   │   │   │   ├── ScanQRPage.jsx
-│   │   │   │   ├── StoreProductsPage.jsx
-│   │   │   │   ├── TransportPage.jsx
-│   │   │   │   └── UsersManagementPage.jsx
-│   │   │   └── services/          # API services
-│   │   │       ├── api.js         # Axios configuration
-│   │   │       ├── authService.js # Authentication API
-│   │   │       ├── productService.js
-│   │   │       └── blockchainService.js
-│   │   └── styles/                # Global styles
-│   │       ├── fonts.css
-│   │       ├── index.css
-│   │       ├── tailwind.css
-│   │       └── theme.css
-│   ├── package.json
-│   ├── vite.config.js            # Vite configuration
-│   └── postcss.config.mjs        # PostCSS configuration
-│
-├── smart-contracts/           # Smart Contracts (Solidity)
-│   ├── contracts/
-│   │   ├── ProductRegistry.sol
-│   │   ├── SupplyChain.sol
-│   │   └── AccessControl.sol
-│   ├── migrations/
-│   ├── test/
-│   └── truffle-config.js
-│
-├── docker-compose.yml         # Docker compose configuration
-├── .gitignore
-└── README.md
-```
-
-## 🚀 Cài Đặt và Chạy Dự Án
-
-### Yêu Cầu Hệ Thống
-- **Node.js**: >= 18.x (LTS recommended)
-- **npm** hoặc **pnpm**: Latest version
-- **MongoDB**: 5.0+ (Local hoặc MongoDB Atlas)
-- **Ganache**: Ethereum local blockchain (optional)
-- **Git**: Version control
-- **Docker** (tùy chọn): Để chạy với containers
-
-### ⚡ Quick Start (Khuyến nghị)
-
-Cách nhanh nhất để chạy toàn bộ hệ thống:
+### Backend
 
 ```bash
-# Clone repository
-git clone https://github.com/mthang045/Blockchain-Based-Food-Traceability-System.git
-cd Blockchain-Based-Food-Traceability-System
-
-# Chạy Backend
 cd backend
 npm install
-npm start
+npm run dev
+```
 
-# Chạy Frontend (terminal mới)
+### Frontend
+
+```bash
 cd frontend
 npm install
+npm run dev
+```
+
+### Root scripts tiện dụng
+
+Từ thư mục gốc dự án:
+
+```bash
+npm run dev:backend
+npm run dev:frontend
+```
+
+## Biến môi trường quan trọng
+
+### backend/.env
+
+```env
+PORT=3000
+NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/food-traceability
+RPC_URL=http://127.0.0.1:7545
+MNEMONIC=your_ganache_mnemonic_here
+CONTRACT_ADDRESS=your_contract_address_here
+JWT_SECRET=your_jwt_secret_key_here
+DEV_WALLET_POOL_SIZE=20
+```
+
+Bạn cũng có thể set `DEV_WALLET_POOL` để chỉ định sẵn danh sách ví dev.
+
+### frontend/.env
+
+```env
+VITE_API_URL=http://localhost:3000/api
+```
+
+## Script hữu ích
+
+### Backend
+
+```bash
+npm run migrate:dev-wallets
+```
+
+Script này quét user cũ chưa có walletAddress và gán ví từ pool dev.
+
+## Tài liệu luồng chạy nhanh
+
+- `RUNPROJECT.md` - Hướng dẫn chạy dự án đầy đủ
+- `backend/README.md` - Tài liệu backend chi tiết
+- `frontend/README.md` - Tài liệu frontend chi tiết
+
+## Ghi chú
+
+- Môi trường dev hiện không bắt buộc MetaMask cho mọi thao tác.
+- Transaction ký bằng private key ví Ganache được gán theo từng user.
+- Khi đổi account, cache private key ký giao dịch được tách theo từng ví để tránh lỗi mismatch.
 npm run dev
 
 # Truy cập:

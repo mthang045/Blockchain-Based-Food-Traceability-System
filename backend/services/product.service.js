@@ -30,6 +30,8 @@ const STATUS_ROLE_PERMISSIONS = {
   Sold: new Set(['ADMIN', 'STORE'])
 };
 
+const isAdminUser = (user) => String(user?.role || '').toUpperCase() === 'ADMIN';
+
 const normalizeStatus = (status = 'Pending') => {
   if (!status) {
     return 'Pending';
@@ -79,6 +81,12 @@ const serializeProduct = (productDocument) => {
     currentStatus: product.status,
     manufacturer: product.producer?.name,
     manufacturerAddress: product.producer?.address,
+    relatedParties: product.relatedParties || {
+      manufacturer: null,
+      transporter: null,
+      store: null,
+      consumer: null
+    },
     blockchainTxHash: product.transactionHash,
     traceabilityIntegrity: {
       isValid: proofVerification.isValid,
@@ -120,6 +128,20 @@ const createHistoryEntry = ({ actor, status, location, notes = '' }) => ({
   location,
   notes
 });
+
+const sanitizeRelatedParty = (party, expectedRole) => {
+  if (!party) {
+    return null;
+  }
+
+  return {
+    userId: party.userId || party._id || undefined,
+    name: party.name || party.username || undefined,
+    role: expectedRole,
+    walletAddress: party.walletAddress || undefined,
+    company: party.company || undefined
+  };
+};
 
 const generateProductId = () => `BATCH-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
 const generateBatchNumber = () => {
@@ -255,6 +277,12 @@ const createProduct = async (productData, user, txOptions = {}) => {
       description: productData.description || '',
       category: productData.category || 'FOOD',
       producer,
+      relatedParties: {
+        manufacturer: sanitizeRelatedParty(producer, 'MANUFACTURER'),
+        transporter: null,
+        store: null,
+        consumer: null
+      },
       origin,
       entityType: 'BATCH',
       batchNumber,
@@ -548,6 +576,10 @@ const updateProduct = async (productId, updateData, user) => {
       return null;
     }
 
+    if (updateData.relatedParties !== undefined && !isAdminUser(user)) {
+      throw new Error('Only ADMIN can assign related parties.');
+    }
+
     if (updateData.name !== undefined) {
       product.name = updateData.name;
     }
@@ -591,6 +623,36 @@ const updateProduct = async (productId, updateData, user) => {
     }
     if (updateData.status !== undefined) {
       product.status = normalizeStatus(updateData.status);
+    }
+
+    if (updateData.relatedParties && isAdminUser(user)) {
+      const currentRelatedParties = product.relatedParties || {};
+      product.relatedParties = {
+        manufacturer: sanitizeRelatedParty(
+          updateData.relatedParties.manufacturer !== undefined
+            ? updateData.relatedParties.manufacturer
+            : currentRelatedParties.manufacturer,
+          'MANUFACTURER'
+        ),
+        transporter: sanitizeRelatedParty(
+          updateData.relatedParties.transporter !== undefined
+            ? updateData.relatedParties.transporter
+            : currentRelatedParties.transporter,
+          'TRANSPORTER'
+        ),
+        store: sanitizeRelatedParty(
+          updateData.relatedParties.store !== undefined
+            ? updateData.relatedParties.store
+            : currentRelatedParties.store,
+          'STORE'
+        ),
+        consumer: sanitizeRelatedParty(
+          updateData.relatedParties.consumer !== undefined
+            ? updateData.relatedParties.consumer
+            : currentRelatedParties.consumer,
+          'CONSUMER'
+        )
+      };
     }
 
     if (updateData.status || updateData.location || updateData.notes) {

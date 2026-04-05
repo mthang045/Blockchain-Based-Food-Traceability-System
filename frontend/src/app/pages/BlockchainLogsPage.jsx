@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { blockchainAPI } from '../services/apiService';
 import { Link2, Search, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ export default function BlockchainLogsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedTxHash, setExpandedTxHash] = useState(null);
 
   const fetchLogs = async () => {
     try {
@@ -34,6 +35,22 @@ export default function BlockchainLogsPage() {
       return hash.includes(q) || event.includes(q);
     });
   }, [logs, searchTerm]);
+
+  const formatArgValue = (value) => {
+    if (value === null || value === undefined) {
+      return 'N/A';
+    }
+
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
+
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 2);
+    }
+
+    return String(value);
+  };
 
   if (loading) {
     return <div className="max-w-7xl mx-auto bg-white rounded-xl shadow p-12 text-center">Dang tai blockchain logs...</div>;
@@ -72,21 +89,61 @@ export default function BlockchainLogsPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredLogs.map((tx, index) => (
-                <tr key={`${tx.transactionHash}-${index}`} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm">{tx.blockNumber}</td>
-                  <td className="px-6 py-4 text-sm">{tx.event}</td>
-                  <td className="px-6 py-4">
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded block truncate max-w-xs">
-                      {tx.transactionHash}
-                    </code>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="text-sm">Confirmed</span>
-                    </div>
-                  </td>
-                </tr>
+                <Fragment key={`${tx.transactionHash}-${index}`}>
+                  <tr key={`${tx.transactionHash}-${index}`} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm">{tx.blockNumber}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedTxHash(expandedTxHash === tx.transactionHash ? null : tx.transactionHash)}
+                        className="text-left font-medium text-gray-900 hover:text-green-600"
+                      >
+                        {tx.event}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded block truncate max-w-xs">
+                        {tx.transactionHash}
+                      </code>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                        <span className="text-sm">Confirmed</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {expandedTxHash === tx.transactionHash && (
+                    <tr key={`${tx.transactionHash}-details`} className="bg-gray-50">
+                      <td colSpan="4" className="px-6 py-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500 mb-1">Block</p>
+                            <p className="font-medium">{tx.blockNumber}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 mb-1">Transaction Hash</p>
+                            <p className="font-mono text-xs break-all">{tx.transactionHash}</p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <p className="text-gray-500 mb-2">Event Args</p>
+                            <div className="space-y-2">
+                              {(tx.args || []).length > 0 ? tx.args.map((arg, argIndex) => (
+                                <div key={`${tx.transactionHash}-arg-${argIndex}`} className="bg-white border border-gray-200 rounded-lg p-3">
+                                  <p className="text-xs text-gray-500 mb-1">Arg {argIndex + 1}</p>
+                                  <code className="text-xs break-all whitespace-pre-wrap">{formatArgValue(arg)}</code>
+                                </div>
+                              )) : (
+                                <p className="text-gray-500">Không có dữ liệu args</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

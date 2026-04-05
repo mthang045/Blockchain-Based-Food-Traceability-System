@@ -1,6 +1,49 @@
 import apiClient from './api';
 import { buildSignedHeaders } from './signatureService';
-import { ensureSigningPrivateKey } from './txSigningClient';
+import { clearCachedSigningPrivateKey, ensureSigningPrivateKey } from './txSigningClient';
+
+const getOptionalSignedHeaders = async ({ method, path }) => {
+  try {
+    return await buildSignedHeaders({ method, path });
+  } catch (error) {
+    const message = String(error?.message || '').toLowerCase();
+    const missingWalletProvider = message.includes('metamask is not available') || message.includes('no wallet account connected');
+    const userRejected = message.includes('user rejected') || message.includes('denied');
+
+    if (missingWalletProvider || userRejected) {
+      return {};
+    }
+
+    throw error;
+  }
+};
+
+const getStoredUser = () => {
+  const raw = localStorage.getItem('user') || sessionStorage.getItem('user');
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    return null;
+  }
+};
+
+const getCurrentWalletAddress = () => {
+  const user = getStoredUser();
+  return user?.walletAddress || null;
+};
+
+const isWalletMismatchError = (error) => {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('provided private key does not match your walletaddress profile') ||
+    message.includes('provided private key does not match your wallet address profile') ||
+    message.includes('does not match digitally signed wallet address')
+  );
+};
 
 // User & Authentication API
 export const authAPI = {
@@ -72,25 +115,41 @@ export const productAPI = {
 
   // Create new batch (product collection is batch-first)
   createProduct: async (productData, options = {}) => {
-    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey();
-    const headers = await buildSignedHeaders({ method: 'POST', path: '/api/products' });
-    return await apiClient.post('/products', productData, {
-      headers: {
-        ...headers,
-        ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
-      },
-    });
+    const walletAddress = options.walletAddress || getCurrentWalletAddress();
+    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey({ walletAddress });
+    const headers = await getOptionalSignedHeaders({ method: 'POST', path: '/api/products' });
+    try {
+      return await apiClient.post('/products', productData, {
+        headers: {
+          ...headers,
+          ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
+        },
+      });
+    } catch (error) {
+      if (isWalletMismatchError(error)) {
+        clearCachedSigningPrivateKey(walletAddress);
+      }
+      throw error;
+    }
   },
 
   createBatch: async (batchData, options = {}) => {
-    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey();
-    const headers = await buildSignedHeaders({ method: 'POST', path: '/api/products/batches' });
-    return await apiClient.post('/products/batches', batchData, {
-      headers: {
-        ...headers,
-        ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
-      },
-    });
+    const walletAddress = options.walletAddress || getCurrentWalletAddress();
+    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey({ walletAddress });
+    const headers = await getOptionalSignedHeaders({ method: 'POST', path: '/api/products/batches' });
+    try {
+      return await apiClient.post('/products/batches', batchData, {
+        headers: {
+          ...headers,
+          ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
+        },
+      });
+    } catch (error) {
+      if (isWalletMismatchError(error)) {
+        clearCachedSigningPrivateKey(walletAddress);
+      }
+      throw error;
+    }
   },
 
   // Update product
@@ -100,16 +159,24 @@ export const productAPI = {
 
   // Update product status
   updateProductStatus: async (productId, status, metadata = {}, options = {}) => {
-    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey();
+    const walletAddress = options.walletAddress || getCurrentWalletAddress();
+    const userPrivateKey = options.userPrivateKey || await ensureSigningPrivateKey({ walletAddress });
     const path = `/api/products/${productId}/status`;
-    const headers = await buildSignedHeaders({ method: 'PUT', path });
+    const headers = await getOptionalSignedHeaders({ method: 'PUT', path });
 
-    return await apiClient.put(`/products/${productId}/status`, { status, ...metadata }, {
-      headers: {
-        ...headers,
-        ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
-      },
-    });
+    try {
+      return await apiClient.put(`/products/${productId}/status`, { status, ...metadata }, {
+        headers: {
+          ...headers,
+          ...(userPrivateKey ? { 'x-user-private-key': userPrivateKey } : {}),
+        },
+      });
+    } catch (error) {
+      if (isWalletMismatchError(error)) {
+        clearCachedSigningPrivateKey(walletAddress);
+      }
+      throw error;
+    }
   },
 
   // Delete product

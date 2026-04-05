@@ -1,5 +1,15 @@
 {
+  "name": "blockchain-nhom13-root",
+  "private": true,
   "dependencies": {
     "multer": "^2.1.1"
+  },
+  "scripts": {
+    "dev": "npm --prefix backend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "start:backend": "npm --prefix backend start",
+    "start:frontend": "npm --prefix frontend run dev",
+    "truffle:migrate": "npm --prefix backend run truffle:migrate"
   }
 }

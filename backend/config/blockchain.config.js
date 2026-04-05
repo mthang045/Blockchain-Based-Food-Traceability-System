@@ -5,6 +5,13 @@ const fs = require('fs');
 // Load contract ABI
 const loadContractABI = (contractName) => {
   try {
+    const buildAbiPath = path.join(__dirname, '..', 'build', 'contracts', `${contractName}.json`);
+    if (fs.existsSync(buildAbiPath)) {
+      const buildAbiFile = fs.readFileSync(buildAbiPath, 'utf8');
+      const buildContractData = JSON.parse(buildAbiFile);
+      return buildContractData.abi || buildContractData;
+    }
+
     const abiPath = path.join(__dirname, '..', 'contracts', `${contractName}.json`);
     const abiFile = fs.readFileSync(abiPath, 'utf8');
     const contractData = JSON.parse(abiFile);

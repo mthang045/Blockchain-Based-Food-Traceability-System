@@ -1,21 +1,43 @@
+import { Suspense, lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
-import LoginPage from './pages/LoginPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
-import CreateProductPage from './pages/CreateProductPage.jsx';
-import MyProductsPage from './pages/MyProductsPage.jsx';
-import ScanQRPage from './pages/ScanQRPage.jsx';
-import UsersManagementPage from './pages/UsersManagementPage.jsx';
-import ProductsManagementPage from './pages/ProductsManagementPage.jsx';
-import BlockchainLogsPage from './pages/BlockchainLogsPage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
-import TransportPage from './pages/TransportPage.jsx';
-import StoreProductsPage from './pages/StoreProductsPage.jsx';
 import DashboardLayout from './components/layout/DashboardLayout.jsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
+const CreateProductPage = lazy(() => import('./pages/CreateProductPage.jsx'));
+const MyProductsPage = lazy(() => import('./pages/MyProductsPage.jsx'));
+const ScanQRPage = lazy(() => import('./pages/ScanQRPage.jsx'));
+const UsersManagementPage = lazy(() => import('./pages/UsersManagementPage.jsx'));
+const ProductsManagementPage = lazy(() => import('./pages/ProductsManagementPage.jsx'));
+const BlockchainLogsPage = lazy(() => import('./pages/BlockchainLogsPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const TransportPage = lazy(() => import('./pages/TransportPage.jsx'));
+const StoreProductsPage = lazy(() => import('./pages/StoreProductsPage.jsx'));
+
+const RouteLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="text-gray-600">Dang tai trang...</div>
+  </div>
+);
+
+const withRouteSuspense = (node) => (
+  <Suspense fallback={<RouteLoader />}>
+    {node}
+  </Suspense>
+);
+
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-600">Dang khoi phuc phien dang nhap...</div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/" replace />;
@@ -25,7 +47,15 @@ function ProtectedRoute({ children }) {
 }
 
 function OptionalDashboardRoute({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-600">Dang tai...</div>
+      </div>
+    );
+  }
 
   if (!user) {
     return children;
@@ -42,111 +72,111 @@ function Root({ children }) {
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <LoginPage />
       </Root>
-    ),
+    )),
   },
   {
     path: '/dashboard',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <DashboardPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/create-product',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <CreateProductPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/my-products',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <MyProductsPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/scan',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <OptionalDashboardRoute>
           <ScanQRPage />
         </OptionalDashboardRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/users',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <UsersManagementPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/products',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <ProductsManagementPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/blockchain',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <BlockchainLogsPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/transport',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <TransportPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/store-products',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <StoreProductsPage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '/profile',
-    element: (
+    element: withRouteSuspense((
       <Root>
         <ProtectedRoute>
           <ProfilePage />
         </ProtectedRoute>
       </Root>
-    ),
+    )),
   },
   {
     path: '*',

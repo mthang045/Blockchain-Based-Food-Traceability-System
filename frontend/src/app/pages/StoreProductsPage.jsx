@@ -18,7 +18,7 @@ export default function StoreProductsPage() {
         setProducts(response.data || []);
       }
     } catch (error) {
-      toast.error(error.message || 'Khong the tai danh sach san pham');
+      toast.error(error.message || 'Không thể tải danh sách sản phẩm');
     }
   };
 
@@ -42,25 +42,25 @@ export default function StoreProductsPage() {
     try {
       const response = await productAPI.updateProductStatus(product.productId, 'InStore', {
         location,
-        notes: 'San pham da duoc nhap vao cua hang',
+        notes: 'Sản phẩm đã được nhập vào cửa hàng',
       });
 
       if (response.success) {
-        toast.success('Da nhan san pham vao cua hang');
+        toast.success('Đã nhận sản phẩm vào cửa hàng');
         await fetchProducts();
       } else {
-        toast.error(response.message || 'Cap nhat that bai');
+        toast.error(response.message || 'Cập nhật thất bại');
       }
     } catch (error) {
-      toast.error(error.message || 'Cap nhat that bai');
+      toast.error(error.message || 'Cập nhật thất bại');
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl mb-2">Quan ly san pham</h1>
-        <p className="text-gray-600">Cap nhat trang thai san pham tai cua hang</p>
+        <h1 className="text-3xl mb-2">Quản lý sản phẩm</h1>
+        <p className="text-gray-600">Cập nhật trạng thái sản phẩm tại cửa hàng</p>
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 mb-6">
@@ -71,7 +71,7 @@ export default function StoreProductsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg"
-            placeholder="Tim kiem san pham"
+            placeholder="Tìm kiếm sản phẩm"
           />
         </div>
       </div>
@@ -95,16 +95,16 @@ export default function StoreProductsPage() {
 
                 <div className="space-y-2 text-sm mb-4">
                   <div>
-                    <span className="text-gray-600">Ma QR:</span>
+                    <span className="text-gray-600">Mã QR:</span>
                     <p className="font-mono text-xs">{product.qrCode}</p>
                   </div>
                   <div>
-                    <span className="text-gray-600">Ngay tao:</span>
+                    <span className="text-gray-600">Ngày tạo:</span>
                     <p>{new Date(product.createdAt).toLocaleDateString('vi-VN')}</p>
                   </div>
                   {product.expiryDate && (
                     <div>
-                      <span className="text-gray-600">Han SD:</span>
+                      <span className="text-gray-600">Hạn sử dụng:</span>
                       <p>{new Date(product.expiryDate).toLocaleDateString('vi-VN')}</p>
                     </div>
                   )}
@@ -122,7 +122,7 @@ export default function StoreProductsPage() {
                     className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
                   >
                     <Plus className="w-4 h-4 inline-block mr-1" />
-                    Nhan hang
+                    Nhận hàng
                   </button>
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function StoreProductsPage() {
                   <div className="bg-white p-4 rounded-lg inline-block">
                     <QRCode value={product.qrCode || product.productId} size={150} />
                   </div>
-                  <p className="text-sm text-gray-600 mt-3">Ma QR: {product.qrCode}</p>
+                  <p className="text-sm text-gray-600 mt-3">Mã QR: {product.qrCode}</p>
                 </div>
               )}
             </div>
@@ -143,8 +143,8 @@ export default function StoreProductsPage() {
       {filteredProducts.length === 0 && (
         <div className="bg-white rounded-xl shadow p-12 text-center">
           <Store className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-xl mb-2">Khong tim thay san pham</h3>
-          <p className="text-gray-600">Thu tim kiem voi tu khoa khac</p>
+          <h3 className="text-xl mb-2">Không tìm thấy sản phẩm</h3>
+          <p className="text-gray-600">Thử tìm kiếm với từ khóa khác</p>
         </div>
       )}
     </div>

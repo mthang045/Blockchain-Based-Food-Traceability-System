@@ -19,6 +19,7 @@
     "seed": "node seed-database.js",
     "seed:users": "node seed-database.js users",
     "seed:clean": "node seed-database.js clean",
+    "migrate:dev-wallets": "node scripts/migrate-dev-wallets.js",
     "truffle:compile": "truffle compile",
     "truffle:migrate": "truffle migrate --network development",
     "truffle:test": "truffle test",

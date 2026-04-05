@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { productAPI } from '../services/apiService';
+import { productAPI, authAPI } from '../services/apiService';
 import { Package, Search, Eye, Trash2, Edit, Plus, X, Calendar, MapPin, User, Loader, Download, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'react-qr-code';
@@ -13,6 +13,7 @@ export default function ProductsManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     batchNumber: '',
@@ -22,6 +23,8 @@ export default function ProductsManagementPage() {
     description: '',
     status: 'Produced',
     expiryDate: '',
+    transporterUserId: '',
+    storeUserId: '',
   });
 
   const buildRandomBatchCode = () => {
@@ -48,8 +51,46 @@ export default function ProductsManagementPage() {
     toast.error('Mã lô bị trùng. Hệ thống đã tạo mã mới, vui lòng gửi lại.');
   };
 
+  const fetchUsersForAssignment = async () => {
+    try {
+      const response = await authAPI.getAllUsers();
+      if (response?.success) {
+        setUsers(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching users for assignment:', error);
+    }
+  };
+
+  const usersByRole = (role) => {
+    const normalizedRole = String(role || '').toUpperCase();
+    return users.filter((item) => String(item.role || '').toUpperCase() === normalizedRole);
+  };
+
+  const toRelatedPartyPayload = (selectedUserId, expectedRole) => {
+    if (!selectedUserId) {
+      return null;
+    }
+
+    const matchedUser = users.find((item) => item._id === selectedUserId);
+    if (!matchedUser) {
+      return null;
+    }
+
+    return {
+      userId: matchedUser._id,
+      name: matchedUser.username || matchedUser.email,
+      role: expectedRole,
+      walletAddress: matchedUser.walletAddress,
+      company: matchedUser.company
+    };
+  };
+
   useEffect(() => {
     fetchProducts();
+    if (String(user?.role || '').toUpperCase() === 'ADMIN') {
+      fetchUsersForAssignment();
+    }
   }, []);
 
   const fetchProducts = async () => {
@@ -93,7 +134,7 @@ export default function ProductsManagementPage() {
       if (response.success) {
         toast.success('Tạo lô thành công!');
         setShowCreateModal(false);
-        setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
+        setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '', transporterUserId: '', storeUserId: '' });
         fetchProducts();
       } else {
         if (isBatchNumberConflict(response.message)) {
@@ -118,11 +159,29 @@ export default function ProductsManagementPage() {
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
     try {
-      const response = await productAPI.updateProduct(editingProduct, formData);
+      const payload = {
+        name: formData.name,
+        batchNumber: formData.batchNumber,
+        lotSize: formData.lotSize,
+        unit: formData.unit,
+        origin: formData.origin,
+        description: formData.description,
+        status: formData.status,
+        expiryDate: formData.expiryDate,
+      };
+
+      if (String(user?.role || '').toUpperCase() === 'ADMIN') {
+        payload.relatedParties = {
+          transporter: toRelatedPartyPayload(formData.transporterUserId, 'TRANSPORTER'),
+          store: toRelatedPartyPayload(formData.storeUserId, 'STORE')
+        };
+      }
+
+      const response = await productAPI.updateProduct(editingProduct, payload);
       if (response.success) {
         toast.success('Cập nhật lô thành công!');
         setEditingProduct(null);
-        setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
+        setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '', transporterUserId: '', storeUserId: '' });
         fetchProducts();
       } else {
         if (isBatchNumberConflict(response.message)) {
@@ -173,12 +232,14 @@ export default function ProductsManagementPage() {
       description: product.description || '',
       status: product.status,
       expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : '',
+      transporterUserId: product.relatedParties?.transporter?.userId || '',
+      storeUserId: product.relatedParties?.store?.userId || '',
     });
   };
 
   const handleCancelEdit = () => {
     setEditingProduct(null);
-    setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
+    setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '', transporterUserId: '', storeUserId: '' });
   };
 
   // Download QR Code as PNG
@@ -542,6 +603,40 @@ export default function ProductsManagementPage() {
                               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
                             />
                           </div>
+                          {String(user?.role || '').toUpperCase() === 'ADMIN' && (
+                            <>
+                              <div>
+                                <label className="block text-sm font-medium mb-1">Gán nhà vận chuyển</label>
+                                <select
+                                  value={formData.transporterUserId || ''}
+                                  onChange={(e) => setFormData({ ...formData, transporterUserId: e.target.value })}
+                                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                                >
+                                  <option value="">Chưa gán</option>
+                                  {usersByRole('TRANSPORTER').map((candidate) => (
+                                    <option key={candidate._id} value={candidate._id}>
+                                      {candidate.username} ({candidate.email})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium mb-1">Gán cửa hàng</label>
+                                <select
+                                  value={formData.storeUserId || ''}
+                                  onChange={(e) => setFormData({ ...formData, storeUserId: e.target.value })}
+                                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                                >
+                                  <option value="">Chưa gán</option>
+                                  {usersByRole('STORE').map((candidate) => (
+                                    <option key={candidate._id} value={candidate._id}>
+                                      {candidate.username} ({candidate.email})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </>
+                          )}
                         </div>
                         <div className="flex gap-3">
                           <button
@@ -638,7 +733,7 @@ export default function ProductsManagementPage() {
               <button
                 onClick={() => {
                   setShowCreateModal(false);
-                  setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
+                  setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '', transporterUserId: '', storeUserId: '' });
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
@@ -767,7 +862,7 @@ export default function ProductsManagementPage() {
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
-                    setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '' });
+                    setFormData({ name: '', batchNumber: '', lotSize: 1, unit: 'kg', origin: '', description: '', status: 'Produced', expiryDate: '', transporterUserId: '', storeUserId: '' });
                   }}
                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
@@ -824,6 +919,14 @@ export default function ProductsManagementPage() {
                     <div>
                       <span className="text-gray-600">Nhà sản xuất:</span>
                       <p className="font-medium">{selectedProduct.producer?.username || selectedProduct.producer?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Nhà vận chuyển:</span>
+                      <p className="font-medium">{selectedProduct.relatedParties?.transporter?.name || 'Chưa gán'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Cửa hàng:</span>
+                      <p className="font-medium">{selectedProduct.relatedParties?.store?.name || 'Chưa gán'}</p>
                     </div>
                     <div>
                       <span className="text-gray-600">Trạng thái:</span>

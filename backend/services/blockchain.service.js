@@ -14,6 +14,26 @@ const getWriteContract = (contractAddress, signerPrivateKey) => {
   return getContract('FoodTraceability', contractAddress);
 };
 
+const serializeBlockchainValue = (value) => {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(serializeBlockchainValue);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => Number.isNaN(Number(key)))
+        .map(([key, item]) => [key, serializeBlockchainValue(item)])
+    );
+  }
+
+  return value;
+};
+
 // Get blockchain network information
 const getNetworkInfo = async () => {
   try {
@@ -148,9 +168,20 @@ const getAllBlockchainLogs = async () => {
   try {
     const contractAddress = process.env.CONTRACT_ADDRESS;
     const contract = getContractReadOnly('FoodTraceability', contractAddress);
-    
-    const productRegisteredEvents = await contract.queryFilter(contract.filters.ProductRegistered());
-    const statusUpdatedEvents = await contract.queryFilter(contract.filters.ProductStatusUpdated());
+
+    const provider = getProvider();
+    const latestBlock = await provider.getBlockNumber();
+
+    const productRegisteredEvents = await contract.queryFilter(
+      contract.filters.ProductRegistered(),
+      0,
+      latestBlock
+    );
+    const statusUpdatedEvents = await contract.queryFilter(
+      contract.filters.ProductStatusUpdated(),
+      0,
+      latestBlock
+    );
     const events = [...productRegisteredEvents, ...statusUpdatedEvents].sort(
       (left, right) => left.blockNumber - right.blockNumber
     );
@@ -159,7 +190,7 @@ const getAllBlockchainLogs = async () => {
       blockNumber: event.blockNumber,
       transactionHash: event.transactionHash,
       event: event.fragment.name,
-      args: event.args
+      args: serializeBlockchainValue(event.args)
     }));
   } catch (error) {
     console.error('Error getting blockchain logs:', sanitizeForLog(error));

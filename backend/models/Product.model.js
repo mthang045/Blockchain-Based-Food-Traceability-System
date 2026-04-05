@@ -8,6 +8,14 @@ const historyEntrySchema = new mongoose.Schema({
   notes: String
 }, { _id: true });
 
+const relatedPartySchema = new mongoose.Schema({
+  userId: { type: String, trim: true },
+  name: { type: String, trim: true },
+  role: { type: String, trim: true },
+  walletAddress: { type: String, trim: true },
+  company: { type: String, trim: true }
+}, { _id: false });
+
 const productSchema = new mongoose.Schema({
   entityType: {
     type: String,
@@ -29,6 +37,12 @@ const productSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     address: { type: String, required: true, trim: true },
     userId: { type: String, trim: true }
+  },
+  relatedParties: {
+    manufacturer: { type: relatedPartySchema, default: null },
+    transporter: { type: relatedPartySchema, default: null },
+    store: { type: relatedPartySchema, default: null },
+    consumer: { type: relatedPartySchema, default: null }
   },
   ipfsHash: { type: String, trim: true },
   ipfsUrl: { type: String, trim: true },

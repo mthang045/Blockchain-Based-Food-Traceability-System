@@ -3,6 +3,11 @@ const { ethers } = require('ethers');
 const SIGNATURE_MAX_AGE_MS = 5 * 60 * 1000;
 const usedNonces = new Map();
 
+const isSignatureOptional = () => {
+  const explicitRequirement = String(process.env.REQUIRE_DIGITAL_SIGNATURE || '').toLowerCase() === 'true';
+  return process.env.NODE_ENV !== 'production' && !explicitRequirement;
+};
+
 const buildSignatureMessage = ({ userId, walletAddress, method, path, timestamp, nonce }) => {
   return [
     'FoodTraceability Request Authorization',
@@ -29,6 +34,14 @@ const requireDigitalSignature = async (req, res, next) => {
     const signature = req.headers['x-signature'];
     const timestampHeader = req.headers['x-signature-timestamp'];
     const nonce = req.headers['x-signature-nonce'];
+
+    // Local-development fallback: allow unsigned requests when signature isn't explicitly required.
+    if (!walletAddress && !signature && !timestampHeader && !nonce && isSignatureOptional()) {
+      req.signatureAuth = req.user?.walletAddress
+        ? { walletAddress: req.user.walletAddress }
+        : undefined;
+      return next();
+    }
 
     if (!walletAddress || !signature || !timestampHeader || !nonce) {
       return res.status(400).json({
