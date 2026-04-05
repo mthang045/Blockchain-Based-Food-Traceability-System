@@ -1,134 +1,103 @@
-# Food Traceability Backend API
+# Backend
 
-## Giới Thiệu
-Backend API cho hệ thống truy xuất nguồn gốc thực phẩm, xây dựng bằng Java Spring Boot và tích hợp blockchain.
+Backend API cho hệ thống FoodChain, xây dựng bằng Node.js, Express, MongoDB và tích hợp blockchain Ethereum local qua Ganache.
 
-## Công Nghệ
-- Java 17
-- Spring Boot 3.2.3
-- Spring Security + JWT
-- Spring Data JPA + Hibernate
-- MySQL
-- Web3j (Ethereum integration)
-- Swagger/OpenAPI
+## Công nghệ
+- Node.js 18+
+- Express.js
+- MongoDB + Mongoose
+- JWT authentication
+- ethers.js
+- bcryptjs
+- nodemon cho development
 
-## Cấu Trúc Dự Án
-```
+## Chức năng chính
+- Đăng ký, đăng nhập, refresh token
+- Quản lý profile người dùng
+- Tạo lô sản phẩm / cập nhật trạng thái / lịch sử hành trình
+- Quản lý người dùng cho ADMIN
+- Ghi và đọc dữ liệu blockchain
+- Hỗ trợ related parties cho manufacturer, transporter, store, consumer
+- Tự gán walletAddress cho user dev từ pool ví Ganache
+- Script migrate user cũ sang wallet pool
+
+## Cấu trúc chính
+```text
 backend/
-├── src/
-│   ├── main/
-│   │   ├── java/com/blockchain/food/
-│   │   │   ├── FoodTraceabilityApplication.java
-│   │   │   ├── config/          # Configuration classes
-│   │   │   ├── controller/      # REST Controllers
-│   │   │   ├── model/           # Entity models
-│   │   │   ├── repository/      # JPA Repositories
-│   │   │   ├── service/         # Business logic
-│   │   │   ├── dto/             # Data Transfer Objects
-│   │   │   ├── security/        # Security components
-│   │   │   └── exception/       # Exception handlers
-│   │   └── resources/
-│   │       ├── application.properties
-│   │       ├── application-dev.properties
-│   │       └── application-prod.properties
-│   └── test/
-└── pom.xml
+├── config/                 # Database, blockchain config
+├── controllers/            # Route handlers
+├── middleware/             # Auth, signature, tx signing
+├── models/                 # Mongoose models
+├── routes/                 # Express routes
+├── services/               # Business logic
+├── scripts/                # Utility scripts / migrations
+├── utils/                  # Helpers
+├── server.js               # App entry point
+└── package.json            # Scripts and dependencies
 ```
 
-## Cài Đặt
-
-### 1. Yêu Cầu
-- JDK 17 trở lên
-- Maven 3.8+
-- MySQL 8.0+
-
-### 2. Cấu Hình Database
-```sql
-CREATE DATABASE food_traceability;
-CREATE USER 'fooduser'@'localhost' IDENTIFIED BY 'yourpassword';
-GRANT ALL PRIVILEGES ON food_traceability.* TO 'fooduser'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-### 3. Cấu Hình Application
-Sửa `src/main/resources/application.properties`:
-```properties
-spring.datasource.username=fooduser
-spring.datasource.password=yourpassword
-jwt.secret=your-secret-key-here
-```
-
-### 4. Build & Run
+## Cài đặt
 ```bash
-# Build project
-mvn clean install
-
-# Run application
-mvn spring-boot:run
-
-# Hoặc chạy với profile dev
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+cd backend
+npm install
 ```
 
-Server sẽ chạy tại: http://localhost:8080
+## Biến môi trường
+Tạo file `.env` trong thư mục backend:
+```env
+PORT=3000
+NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/food-traceability
+RPC_URL=http://127.0.0.1:7545
+MNEMONIC=your_ganache_mnemonic_here
+CONTRACT_ADDRESS=your_contract_address_here
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:5173
+DEV_WALLET_POOL_SIZE=20
+# Hoặc set DEV_WALLET_POOL=0xabc...,0xdef...
+```
 
-## API Documentation
-Truy cập Swagger UI: http://localhost:8080/swagger-ui.html
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Đăng ký tài khoản
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/refresh` - Refresh token
-
-### Products
-- `GET /api/products` - Lấy danh sách sản phẩm
-- `GET /api/products/{id}` - Lấy chi tiết sản phẩm
-- `POST /api/products` - Tạo sản phẩm mới
-- `PUT /api/products/{id}` - Cập nhật sản phẩm
-- `DELETE /api/products/{id}` - Xóa sản phẩm
-
-### Supply Chain
-- `GET /api/supply-chain/{productId}` - Lấy lịch sử chuỗi cung ứng
-- `POST /api/supply-chain` - Thêm bước vận chuyển
-- `PUT /api/supply-chain/{id}` - Cập nhật trạng thái
-
-### Blockchain
-- `GET /api/blockchain/transactions` - Lấy danh sách transactions
-- `GET /api/blockchain/verify/{hash}` - Xác minh transaction
-- `POST /api/blockchain/write` - Ghi dữ liệu lên blockchain
-
-### Users (Admin)
-- `GET /api/users` - Lấy danh sách người dùng
-- `PUT /api/users/{id}` - Cập nhật người dùng
-- `DELETE /api/users/{id}` - Xóa người dùng
-
-## Testing
+## Chạy development
 ```bash
-# Run all tests
-mvn test
-
-# Run specific test
-mvn test -Dtest=ProductControllerTest
+npm run dev
 ```
 
-## Docker
+## Script hữu ích
 ```bash
-# Build image
-docker build -t food-traceability-backend .
-
-# Run container
-docker run -p 8080:8080 food-traceability-backend
+npm run seed
+npm run seed:users
+npm run seed:clean
+npm run migrate:dev-wallets
+npm run truffle:compile
+npm run truffle:migrate
+npm run truffle:test
 ```
 
-## Environment Variables
-```bash
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=food_traceability
-DB_USERNAME=root
-DB_PASSWORD=password
-JWT_SECRET=your-secret-key
-BLOCKCHAIN_URL=http://localhost:8545
-```
+## API chính
+- `POST /api/users/register`
+- `POST /api/users/login`
+- `GET /api/users/profile`
+- `GET /api/products`
+- `POST /api/products`
+- `POST /api/products/batches`
+- `PUT /api/products/:productId/status`
+- `GET /api/products/:productId/history`
+- `GET /api/blockchain/logs`
+
+## Ghi chú triển khai
+- Môi trường dev hiện có thể chạy không cần MetaMask.
+- Request ký giao dịch được kiểm tra theo walletAddress của user.
+- Các tài khoản có vai trò giao dịch nên có walletAddress hợp lệ.
+
+## Troubleshooting
+### MongoDB không kết nối
+- Kiểm tra MongoDB local đang chạy trên cổng 27017.
+
+### Blockchain không kết nối
+- Kiểm tra Ganache đang chạy trên `http://127.0.0.1:7545`.
+- Kiểm tra `CONTRACT_ADDRESS` trong `.env` khớp contract đã deploy.
+
+### Tạo lô / cập nhật trạng thái lỗi ký
+- Đảm bảo private key bạn nhập khớp với walletAddress của user hiện tại.
+- Logout rồi login lại nếu bạn vừa đổi tài khoản dev.

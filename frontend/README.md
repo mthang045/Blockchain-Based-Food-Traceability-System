@@ -1,153 +1,98 @@
-# Food Traceability Frontend
+# Frontend
 
-## Giới Thiệu
-Frontend application cho hệ thống truy xuất nguồn gốc thực phẩm, xây dựng bằng React + JavaScript + Vite.
+Frontend của FoodChain được xây dựng bằng React + Vite + JavaScript, hỗ trợ dashboard theo từng vai trò, quản lý sản phẩm, vận chuyển, quét QR và blockchain logs.
 
-## Công Nghệ
+## Công nghệ
 - React 18.3.1
-- JavaScript (ES6+)
 - Vite 6.3.5
-- Tailwind CSS 4.1.12
+- JavaScript (ES6+)
 - React Router 7.13.0
-- Material-UI (MUI) 7.3.5
+- Tailwind CSS 4.1.12
+- MUI 7.3.5
+- Recharts 2.15.2
+- Lucide React
 - React QR Code
-- Recharts (Biểu đồ)
+- Sonner
 
-## Cấu Trúc Dự Án
-```
+## Chức năng chính
+- Đăng nhập / đăng ký
+- Dashboard riêng cho ADMIN, MANUFACTURER, TRANSPORTER, STORE, CONSUMER
+- Tạo lô sản phẩm và quản lý sản phẩm
+- Theo dõi vận chuyển và lịch sử hành trình
+- Nhận hàng tại cửa hàng
+- Quét QR và tra cứu sản phẩm
+- Blockchain logs có thể mở rộng chi tiết
+- Route code-splitting và dashboard code-splitting theo role
+
+## Cấu trúc chính
+```text
 frontend/
 ├── src/
 │   ├── app/
-│   │   ├── components/      # Reusable components
-│   │   │   ├── figma/      # Figma components
-│   │   │   ├── layout/     # Layout components
-│   │   │   └── ui/         # UI components
-│   │   ├── contexts/       # React contexts
-│   │   ├── pages/          # Page components
-│   │   └── services/       # API services
-│   └── styles/             # Global styles
+│   │   ├── components/
+│   │   │   └── dashboard/      # Dashboard theo role + shared UI
+│   │   ├── contexts/           # Auth context
+│   │   ├── pages/              # Page components
+│   │   ├── services/           # API clients
+│   │   └── routes.jsx          # Router + lazy loading
+│   └── styles/                 # Global styles
 ├── package.json
 ├── vite.config.js
 └── postcss.config.mjs
 ```
 
-## Cài Đặt
-
-### 1. Yêu Cầu
-- Node.js >= 16.x
-- npm, pnpm hoặc yarn
-
-### 2. Cài Đặt Dependencies
+## Cài đặt
 ```bash
-# Sử dụng npm
+cd frontend
 npm install
-
-# Hoặc pnpm (khuyến nghị)
-pnpm install
-
-# Hoặc yarn
-yarn install
 ```
 
-### 3. Cấu Hình API
+## Cấu hình API
 Tạo file `.env.local`:
 ```env
-VITE_API_URL=http://localhost:8080/api
+VITE_API_URL=http://localhost:3000/api
 ```
 
-Hoặc sửa trong `src/app/services/api.js`:
-```javascript
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-```
-
-### 4. Chạy Development Server
+## Chạy development
 ```bash
 npm run dev
-# hoặc
-pnpm dev
-# hoặc
-yarn dev
 ```
 
-Application sẽ chạy tại: http://localhost:5173
+Ứng dụng sẽ chạy tại: http://localhost:5173
 
-### 5. Build Production
+## Build production
 ```bash
 npm run build
-# hoặc
-pnpm build
-
-# Preview production build
 npm run preview
 ```
 
-## Scripts
+## Lưu ý về đăng nhập và giao dịch
+- Frontend hiện hỗ trợ local dev không cần MetaMask cho mọi thao tác.
+- Khi thực hiện transaction, hệ thống dùng walletAddress + private key tương ứng của user dev.
+- Nếu đổi account, nên logout/login lại để tránh dính cache key cũ.
 
-- `npm run dev` - Chạy development server
-- `npm run build` - Build production
-- `npm run preview` - Preview production build
-- `npm run lint` - Lint code (nếu có ESLint)
-
-## Features
-
-### Pages
-- **LoginPage** - Đăng nhập/Đăng ký
-- **DashboardPage** - Tổng quan hệ thống
-- **CreateProductPage** - Tạo sản phẩm mới
-- **MyProductsPage** - Quản lý sản phẩm của tôi
-- **ProductsManagementPage** - Quản lý tất cả sản phẩm (Admin)
-- **StoreProductsPage** - Kho sản phẩm
-- **TransportPage** - Quản lý vận chuyển
-- **ScanQRPage** - Quét QR code
-- **BlockchainLogsPage** - Lịch sử blockchain
-- **ProfilePage** - Thông tin cá nhân
-- **UsersManagementPage** - Quản lý người dùng (Admin)
-
-### Components
-- UI Components: buttons, cards, dialogs, forms, tables, etc.
-- Layout Components: sidebar, navbar, dashboard layout
-- Custom Components: QR code scanner, blockchain viewer
-
-## Docker
-
-### Build Image
-```bash
-docker build -t food-traceability-frontend .
-```
-
-### Run Container
-```bash
-docker run -p 3000:80 food-traceability-frontend
-```
-
-## Environment Variables
-
-```env
-# API Configuration
-VITE_API_URL=http://localhost:8080/api
-
-# App Configuration
-VITE_APP_NAME=Food Traceability System
-VITE_APP_VERSION=1.0.0
-```
-
-## Browser Support
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+## Trang chính
+- LoginPage
+- DashboardPage
+- CreateProductPage
+- MyProductsPage
+- ProductsManagementPage
+- StoreProductsPage
+- TransportPage
+- ScanQRPage
+- BlockchainLogsPage
+- ProfilePage
+- UsersManagementPage
 
 ## Troubleshooting
+### Không gọi được API
+- Kiểm tra backend đang chạy ở `http://localhost:3000`
+- Kiểm tra `VITE_API_URL` trong `.env.local`
 
-### Port already in use
-```bash
-# Change port in package.json or run with different port
-npm run dev -- --port 3000
-```
+### Màn hình trống sau khi vào dashboard
+- Reload cứng trình duyệt
+- Kiểm tra đã đăng nhập đúng role chưa
 
-### Module not found
-```bash
-# Clear node_modules and reinstall
-rm -rf node_modules
-npm install
-```
+### Chậm khi tải trang
+- Ứng dụng đã tách route và dashboard theo lazy loading.
+- Các page chỉ được tải khi cần.
