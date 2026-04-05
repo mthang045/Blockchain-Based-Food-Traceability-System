@@ -5,6 +5,7 @@ const {
   getContractReadOnly
 } = require('../config/blockchain.config');
 const { sanitizeForLog } = require('../utils/logSanitizer');
+const BlockchainLog = require('../models/BlockchainLog.model');
 
 const getWriteContract = (contractAddress, signerPrivateKey) => {
   if (signerPrivateKey) {
@@ -32,6 +33,54 @@ const serializeBlockchainValue = (value) => {
   }
 
   return value;
+};
+
+const mapReceiptStatus = (receiptStatus) => {
+  if (receiptStatus === 0) {
+    return 'FAILED';
+  }
+
+  return 'SUCCESS';
+};
+
+const persistBlockchainLog = async ({ tx, receipt, functionName, functionParams, relatedEntity }) => {
+  try {
+    const provider = getProvider();
+    const network = await provider.getNetwork();
+    const block = await provider.getBlock(receipt.blockNumber);
+
+    await BlockchainLog.findOneAndUpdate(
+      { transactionHash: receipt.hash },
+      {
+        $set: {
+          transactionHash: receipt.hash,
+          blockNumber: receipt.blockNumber,
+          blockHash: receipt.blockHash,
+          contractAddress: receipt.to || tx.to || process.env.CONTRACT_ADDRESS,
+          from: tx.from,
+          to: tx.to,
+          gasUsed: receipt.gasUsed?.toString() || '0',
+          gasPrice: (receipt.effectiveGasPrice || tx.gasPrice || 0n).toString(),
+          value: tx.value?.toString() || '0',
+          functionName,
+          functionParams: serializeBlockchainValue(functionParams || {}),
+          status: mapReceiptStatus(receipt.status),
+          relatedEntity,
+          blockTimestamp: block?.timestamp
+            ? new Date(Number(block.timestamp) * 1000)
+            : new Date(),
+          confirmations: 0,
+          network: process.env.BLOCKCHAIN_NETWORK || 'development',
+          chainId: Number(network.chainId),
+          isSynced: true,
+          lastSyncedAt: new Date()
+        }
+      },
+      { upsert: true }
+    );
+  } catch (persistError) {
+    console.warn('Failed to persist blockchain log:', persistError.message);
+  }
 };
 
 // Get blockchain network information
@@ -72,6 +121,21 @@ const registerProductOnChain = async (productData, options = {}) => {
     
     // Wait for transaction confirmation
     const receipt = await tx.wait();
+
+    await persistBlockchainLog({
+      tx,
+      receipt,
+      functionName: 'registerProduct',
+      functionParams: {
+        name: productData.name,
+        origin: productData.origin,
+        productId: productData.productId
+      },
+      relatedEntity: {
+        entityType: 'PRODUCT',
+        entityId: productData.productId
+      }
+    });
     
     return receipt.hash;
   } catch (error) {
@@ -89,6 +153,21 @@ const updateProductStatusOnChain = async (productId, status, location, options =
     // Call smart contract function to update status
     const tx = await contract.updateProductStatus(productId, status, location);
     const receipt = await tx.wait();
+
+    await persistBlockchainLog({
+      tx,
+      receipt,
+      functionName: 'updateProductStatus',
+      functionParams: {
+        productId,
+        status,
+        location
+      },
+      relatedEntity: {
+        entityType: 'PRODUCT',
+        entityId: productId
+      }
+    });
     
     return receipt.hash;
   } catch (error) {

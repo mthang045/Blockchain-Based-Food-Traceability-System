@@ -1,12 +1,16 @@
 const mongoose = require('mongoose');
 const { ethers } = require('ethers');
 const Product = require('../models/Product.model');
+const Transaction = require('../models/Transaction.model');
+const QRCode = require('../models/QRCode.model');
 const blockchainService = require('./blockchain.service');
 const { sanitizeForLog } = require('../utils/logSanitizer');
 const {
   createTraceabilityProof,
   verifyTraceabilityProof
 } = require('../utils/traceabilityProof');
+
+const FRONTEND_BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 const STATUS_MAP = {
   PENDING: 'Pending',
@@ -18,6 +22,24 @@ const STATUS_MAP = {
   INSTORE: 'InStore',
   IN_STORE: 'InStore',
   SOLD: 'Sold'
+};
+
+const STATUS_TO_TRANSACTION_TYPE = {
+  Produced: 'PRODUCTION',
+  InTransit: 'TRANSFER',
+  Delivered: 'TRANSFER',
+  InStore: 'STORAGE',
+  Sold: 'SALE',
+  Pending: 'STORAGE'
+};
+
+const STATUS_TO_TRANSACTION_STATUS = {
+  Produced: 'COMPLETED',
+  InTransit: 'IN_TRANSIT',
+  Delivered: 'COMPLETED',
+  InStore: 'COMPLETED',
+  Sold: 'COMPLETED',
+  Pending: 'PENDING'
 };
 
 const ONCHAIN_CREATE_ROLES = new Set(['ADMIN', 'MANUFACTURER']);
@@ -60,6 +82,199 @@ const serializeHistory = (history = []) => {
     performedBy: entry.actor,
     notes: entry.notes || ''
   }));
+};
+
+const toObjectIdIfValid = (value) => {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value._id || value;
+  return mongoose.Types.ObjectId.isValid(normalized) ? new mongoose.Types.ObjectId(normalized) : undefined;
+};
+
+const buildLocationSnapshot = (locationValue) => {
+  const safeLocation = locationValue || 'Unknown location';
+  return {
+    name: safeLocation,
+    address: safeLocation
+  };
+};
+
+const buildPartySnapshot = (party, role) => {
+  const label = String(role || '').toUpperCase();
+  return {
+    organizationId: toObjectIdIfValid(party?.userId),
+    name: party?.name || `${label || 'UNKNOWN'} party`,
+    walletAddress: party?.walletAddress || party?.address || 'N/A',
+    role
+  };
+};
+
+const resolvePartiesByStatus = (product, status) => {
+  const related = product.relatedParties || {};
+  const manufacturer = related.manufacturer || {
+    userId: product.producer?.userId,
+    name: product.producer?.name,
+    walletAddress: product.producer?.address
+  };
+  const transporter = related.transporter || {
+    userId: null,
+    name: 'Transporter',
+    walletAddress: 'N/A'
+  };
+  const store = related.store || {
+    userId: null,
+    name: 'Store',
+    walletAddress: 'N/A'
+  };
+  const consumer = related.consumer || {
+    userId: null,
+    name: 'Consumer',
+    walletAddress: 'N/A'
+  };
+
+  if (status === 'Produced') {
+    return {
+      from: buildPartySnapshot(manufacturer, 'SENDER'),
+      to: buildPartySnapshot(manufacturer, 'RECEIVER')
+    };
+  }
+
+  if (status === 'InTransit') {
+    return {
+      from: buildPartySnapshot(manufacturer, 'SENDER'),
+      to: buildPartySnapshot(transporter, 'RECEIVER'),
+      transporter: buildPartySnapshot(transporter, 'TRANSPORTER')
+    };
+  }
+
+  if (status === 'Delivered') {
+    return {
+      from: buildPartySnapshot(transporter, 'SENDER'),
+      to: buildPartySnapshot(store, 'RECEIVER'),
+      transporter: buildPartySnapshot(transporter, 'TRANSPORTER')
+    };
+  }
+
+  if (status === 'InStore') {
+    return {
+      from: buildPartySnapshot(store, 'SENDER'),
+      to: buildPartySnapshot(store, 'RECEIVER')
+    };
+  }
+
+  if (status === 'Sold') {
+    return {
+      from: buildPartySnapshot(store, 'SENDER'),
+      to: buildPartySnapshot(consumer, 'RECEIVER')
+    };
+  }
+
+  return {
+    from: buildPartySnapshot(manufacturer, 'SENDER'),
+    to: buildPartySnapshot(manufacturer, 'RECEIVER')
+  };
+};
+
+const buildTransactionId = (productId, status, timestamp, fallbackIndex) => {
+  const statusKey = String(status || 'PENDING').toUpperCase();
+  const timeValue = new Date(timestamp || Date.now()).getTime();
+  const suffix = fallbackIndex !== undefined ? `-${fallbackIndex}` : '';
+  return `TXN-${productId}-${statusKey}-${timeValue}${suffix}`;
+};
+
+const ensureQRCodeRecord = async (product, user) => {
+  if (!product?.productId || !product?._id) {
+    return;
+  }
+
+  const qrCodeId = `QR-${product.productId}`;
+  const qrData = product.qrCode || `FOODCHAIN-${product.productId}`;
+  const verificationUrl = `${FRONTEND_BASE_URL}/trace/${product.productId}`;
+
+  await QRCode.findOneAndUpdate(
+    { productId: product.productId },
+    {
+      $set: {
+        qrCodeId,
+        product: product._id,
+        productId: product.productId,
+        qrData,
+        verificationUrl,
+        generatedBy: {
+          userId: toObjectIdIfValid(user?._id),
+          organizationId: toObjectIdIfValid(product.producer?.userId)
+        },
+        metadata: {
+          batchNumber: product.batchNumber || '',
+          notes: product.description || ''
+        }
+      },
+      $setOnInsert: {
+        format: 'PNG',
+        size: 300,
+        isActive: true,
+        isVerified: false,
+        totalScans: 0,
+        uniqueScans: 0
+      }
+    },
+    { upsert: true }
+  );
+};
+
+const recordTransactionEvent = async (product, event = {}) => {
+  if (!product?.productId || !product?._id) {
+    return;
+  }
+
+  const status = normalizeStatus(event.status || product.status || 'Pending');
+  const actor = event.actor || 'System';
+  const location = event.location || product.origin || 'Unknown location';
+  const timestamp = event.timestamp || new Date();
+  const txType = STATUS_TO_TRANSACTION_TYPE[status] || 'STORAGE';
+  const txStatus = STATUS_TO_TRANSACTION_STATUS[status] || 'PENDING';
+  const txId = event.transactionId || buildTransactionId(product.productId, status, timestamp, event.fallbackIndex);
+  const parties = resolvePartiesByStatus(product, status);
+
+  const updatePayload = {
+    transactionId: txId,
+    product: product._id,
+    productId: product.productId,
+    type: txType,
+    from: parties.from,
+    to: parties.to,
+    quantity: {
+      amount: Number(product.lotSize || 1),
+      unit: product.unit || 'unit'
+    },
+    origin: buildLocationSnapshot(product.origin || location),
+    destination: buildLocationSnapshot(location),
+    status: txStatus,
+    blockchainTxHash: event.blockchainTxHash || product.transactionHash || undefined,
+    notes: event.notes || `Status changed to ${status} by ${actor}`
+  };
+
+  if (parties.transporter) {
+    updatePayload.transporter = parties.transporter;
+  }
+
+  if (txStatus === 'COMPLETED') {
+    updatePayload.completedAt = timestamp;
+  }
+
+  await Transaction.findOneAndUpdate(
+    { transactionId: txId },
+    {
+      $set: updatePayload,
+      $setOnInsert: {
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }
+    },
+    { upsert: true }
+  );
 };
 
 const serializeProduct = (productDocument) => {
@@ -315,6 +530,21 @@ const createProduct = async (productData, user, txOptions = {}) => {
     product.traceabilityProof = await createTraceabilityProof(product, signingOptions.signerPrivateKey);
 
     await product.save();
+
+    try {
+      await ensureQRCodeRecord(product, user);
+      await recordTransactionEvent(product, {
+        status,
+        actor: producer.name,
+        location: origin,
+        notes: productData.description || 'Product created',
+        blockchainTxHash: product.transactionHash,
+        timestamp: product.history?.[0]?.timestamp || new Date()
+      });
+    } catch (persistenceError) {
+      console.warn('Secondary persistence warning (QRCode/Transaction):', persistenceError.message);
+    }
+
     return serializeProduct(product);
   } catch (error) {
     console.error('Error in createProduct service:', sanitizeForLog(error));
@@ -384,6 +614,22 @@ const updateProductStatus = async (productId, status, metadata = {}, user, txOpt
     product.traceabilityProof = await createTraceabilityProof(product, signingOptions.signerPrivateKey);
 
     await product.save();
+
+    const latestHistory = product.history?.[product.history.length - 1];
+    try {
+      await ensureQRCodeRecord(product, user);
+      await recordTransactionEvent(product, {
+        status: normalizedStatus,
+        actor,
+        location,
+        notes: metadata.notes || '',
+        blockchainTxHash: product.transactionHash,
+        timestamp: latestHistory?.timestamp || new Date()
+      });
+    } catch (persistenceError) {
+      console.warn('Secondary persistence warning (QRCode/Transaction):', persistenceError.message);
+    }
+
     return serializeProduct(product);
   } catch (error) {
     console.error('Error in updateProductStatus service:', sanitizeForLog(error));
@@ -667,6 +913,24 @@ const updateProduct = async (productId, updateData, user) => {
     }
 
     await product.save();
+
+    if (updateData.status || updateData.location || updateData.notes) {
+      const latestHistory = product.history?.[product.history.length - 1];
+      try {
+        await ensureQRCodeRecord(product, user);
+        await recordTransactionEvent(product, {
+          status: product.status,
+          actor: user?.username || user?.email || 'System',
+          location: updateData.location || product.origin || 'Unknown location',
+          notes: updateData.notes || 'Batch updated',
+          blockchainTxHash: product.transactionHash,
+          timestamp: latestHistory?.timestamp || new Date()
+        });
+      } catch (persistenceError) {
+        console.warn('Secondary persistence warning (QRCode/Transaction):', persistenceError.message);
+      }
+    }
+
     return serializeProduct(product);
   } catch (error) {
     console.error('Error updating product:', sanitizeForLog(error));

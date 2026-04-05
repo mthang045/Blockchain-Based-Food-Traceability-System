@@ -15,7 +15,7 @@ const locationSchema = new mongoose.Schema({
 }, { _id: false });
 
 const partySchema = new mongoose.Schema({
-  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', required: true },
+  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', required: false },
   name: { type: String, required: true },
   walletAddress: { type: String, required: true },
   role: {
@@ -156,7 +156,6 @@ transactionSchema.index({ productId: 1, createdAt: -1 });
 transactionSchema.index({ 'from.organizationId': 1 });
 transactionSchema.index({ 'to.organizationId': 1 });
 transactionSchema.index({ type: 1, status: 1 });
-transactionSchema.index({ blockchainTxHash: 1 });
 transactionSchema.index({ createdAt: -1 });
 
 // Virtual: Duration
